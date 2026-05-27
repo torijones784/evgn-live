@@ -1,0 +1,1982 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>evgn OS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garant:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    :root {
+      --color-brown-deep: #2C1810;
+      --color-brown-mid: #5C3D2E;
+      --color-cream: #F8F4EE;
+      --color-cream-warm: #F2EDE5;
+      --color-sage: #8B9E89;
+      --color-sage-light: #C4CFBE;
+      --color-gold: #C9A84C;
+      --color-gold-muted: #D4B896;
+      --color-white: #FFFFFF;
+      --color-text-primary: #2C1810;
+      --color-text-secondary: #7A6355;
+      --color-text-tertiary: #A89585;
+      --color-border: #E8E0D8;
+      --color-border-subtle: #F0EBE4;
+      --font-display: 'Cormorant Garant', Georgia, serif;
+      --font-body: 'DM Sans', system-ui, sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: var(--font-body); background: var(--color-cream); color: var(--color-text-primary); -webkit-font-smoothing: antialiased; }
+    #root { height: 100%; }
+    button { font-family: var(--font-body); cursor: pointer; border: none; background: none; }
+    a { color: inherit; text-decoration: none; }
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 2px; }
+
+    .phase-live {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-family: var(--font-body); font-size: 10px; font-weight: 500;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      padding: 2px 8px; border-radius: 20px;
+      background: rgba(139,158,137,0.15); color: var(--color-sage);
+      border: 1px solid rgba(139,158,137,0.3);
+    }
+    .phase-live::before {
+      content: ''; display: inline-block; width: 5px; height: 5px;
+      border-radius: 50%; background: var(--color-sage);
+    }
+
+    .status-tag {
+      display: inline-flex; align-items: center;
+      font-size: 11px; font-weight: 500; letter-spacing: 0.04em;
+      padding: 3px 9px; border-radius: 20px; white-space: nowrap;
+    }
+    .st-on-track { background: rgba(139,158,137,0.14); color: #5a7a58; }
+    .st-needs-attention { background: rgba(201,168,76,0.14); color: #9a7a2c; }
+    .st-blocked { background: rgba(180,100,80,0.12); color: #8a4030; }
+    .st-in-review { background: rgba(92,61,46,0.1); color: var(--color-brown-mid); }
+    .st-awaiting { background: rgba(201,168,76,0.14); color: #9a7a2c; }
+    .st-drafting { background: rgba(139,158,137,0.1); color: var(--color-sage); }
+
+    .overlay {
+      position: fixed; inset: 0;
+      background: rgba(44,24,16,0.38);
+      z-index: 40; animation: fadeIn 200ms ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
+    @keyframes pageFadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    .page-enter { animation: pageFadeIn 200ms ease; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel" data-presets="react">
+
+/* ── DATA ────────────────────────────────────────────────── */
+
+const CLIENTS = ['My Neighbors', 'George Rings', 'Foxiecakes'];
+
+const USERS = [
+  { email:'jonestori784@gmail.com',          password:'Tq7#Mv2k', name:'Tori' },
+  { email:'lindsay@evergreennewyork.com',    password:'Xp4$Rn9b', name:'Lindsay' },
+  { email:'megan@evergreennewyork.com',      password:'Jd6!Wc3f', name:'Megan' },
+];
+
+const mondayBriefs = {
+  'My Neighbors': {
+    weekOf: 'Week of May 27, 2026',
+    greeting: "The team has been heads-down this week. Here's where things stand.",
+    priority: {
+      headline: 'Review the Q3 campaign brief and mark your feedback by Thursday.',
+      body: "Megan has drafted the full strategy — your perspective on the two audience segments is the only missing piece before we go to production.",
+      owner: 'Megan · Marketing',
+      subtasks: [
+        'Note your preferred targeting approach for each of the two audience segments',
+        'Flag any budget concerns or channel priorities before Thursday',
+        'Confirm influencer shortlist feedback with Carly this week',
+      ],
+    },
+    done: [
+      'Q2 campaign performance report delivered',
+      'Instagram content calendar approved through June',
+      'Vendor negotiation on fulfillment pricing resolved',
+      'Paid media budget reallocation complete',
+    ],
+    inMotion: [
+      { item: 'Google Ads strategy refresh', owner: 'Megan', dept: 'Marketing', status: 'In review' },
+      { item: 'Q3 operational SOP update', owner: 'Alex', dept: 'Operations', status: 'Drafting' },
+      { item: 'Influencer partnership evaluation', owner: 'Carly', dept: 'Marketing', status: 'Awaiting your input' },
+    ],
+  },
+  'George Rings': {
+    weekOf: 'Week of May 27, 2026',
+    greeting: "The Vault Sale infrastructure is in place. A few key decisions will unlock the next phase.",
+    priority: {
+      headline: 'Review the Vault Sale landing page and select your priority images for Meta ads.',
+      body: "Carly has the catalog-inspired landing page ready for your review. Your feedback on copy and flow — plus your image selections — are the final inputs needed before Vault Sale creative goes live.",
+      owner: 'Carly · Marketing',
+      subtasks: [
+        'Review landing page copy for flow and redundancy vs. homepage',
+        'Choose priority images for Meta ad placements and share with Carly',
+        'Finalize three-tab inventory sheet (gold, silver, accessories) with COGS by Thursday',
+        'Send Shopify wish list with screenshots or walkthrough video',
+      ],
+    },
+    done: [
+      'Meta Business Manager fully set up — restrictions lifted, assets assigned to Carly + Bryenn',
+      'Mailer ROI tracking tab added to baseline metrics dashboard',
+      'Ad comment controls confirmed — comments off before all campaign launches',
+      'Vault Sale inventory sheet structure established (gold, silver, accessories)',
+    ],
+    inMotion: [
+      { item: 'Vault Sale catalog-inspired landing page', owner: 'Carly', dept: 'Marketing', status: 'In review' },
+      { item: 'Vault Sale discount analysis (10% on older inventory)', owner: 'Alex', dept: 'Operations', status: 'In review' },
+      { item: 'Meta + Google ad creative build', owner: 'Carly', dept: 'Marketing', status: 'Drafting' },
+      { item: 'Shopify theme fixes + wish list', owner: 'Carly', dept: 'Marketing', status: 'Awaiting your input' },
+    ],
+  },
+  'Foxiecakes': {
+    weekOf: 'Week of May 27, 2026',
+    greeting: "Your TikTok momentum is still working in your favor. The SEO plan is ready — here's the week.",
+    priority: {
+      headline: 'Review the SEO roadmap and share your direction on the email + SMS capture strategy.',
+      body: "Carly has the SEO plan with timelines and keyword targets ready to present. Your input on the opt-in approach and pop-up direction is the only thing holding up the next build cycle.",
+      owner: 'Carly · Marketing',
+      subtasks: [
+        'Provide feedback on email/SMS capture ideas and preferred pop-up style (wheel vs. standard)',
+        'Align with Lindsay on post-purchase offer strategy and wholesale call timing',
+        'Share COGS spreadsheet with the team this week',
+        'Confirm Hamptons kit lifestyle shoot direction',
+      ],
+    },
+    done: [
+      'Viral TikTok (~400k views) — follow-up content strategy defined, team responding to comments',
+      "Mother's Day email campaign live — 23% open rate, strong engagement",
+      "Bakery vs. Mother's Day ad monitoring set up and tracking",
+      'Meta email capture + nurture strategy reviewed',
+    ],
+    inMotion: [
+      { item: 'SEO content plan + keyword research', owner: 'Carly', dept: 'Marketing', status: 'Drafting' },
+      { item: 'Meta ad performance optimization', owner: 'Bryenn', dept: 'Marketing', status: 'In review' },
+      { item: 'Pop-up strategy test (wheel vs. standard)', owner: 'Carly', dept: 'Marketing', status: 'In review' },
+      { item: 'Wholesale strategy follow-up call timing', owner: 'Lindsay', dept: 'Operations', status: 'Awaiting your input' },
+    ],
+  },
+};
+
+const pipelineLeads = [
+  { id: 1, company: 'My Neighbors',  contact: 'Jess Harmon',    stage: 'Execution', status: 'Won',  source: 'Referral',        days: 12 },
+  { id: 2, company: 'George Rings',  contact: 'Claire Nguyen',  stage: 'Execution', status: 'Won',  source: 'LinkedIn',        days: 8  },
+  { id: 3, company: 'Foxiecakes',    contact: 'Maya Ross',      stage: 'Execution', status: 'Won',  source: 'Instagram',       days: 3  },
+  { id: 4, company: 'Bloom & Co',    contact: 'Rachel Kim',     stage: 'Discovery', status: 'Open', source: 'Networking Event',days: 2  },
+  { id: 5, company: 'The Salt House',contact: 'Priya Mehta',    stage: 'Quote',     status: 'Open', source: 'Referral',        days: 6  },
+  { id: 6, company: 'Studio Vane',   contact: 'Lauren Ellis',   stage: 'Intake',    status: 'Open', source: 'Instagram',       days: 1  },
+  { id: 7, company: 'Maison Briar',  contact: 'Sofia Delaney',  stage: 'Contract',  status: 'Open', source: 'Cold Outreach',   days: 4  },
+  { id: 8, company: 'Wren & Wild',   contact: 'Dana Cole',      stage: 'Lost',      status: 'Lost', source: 'Website',         days: 14 },
+  { id: 9, company: 'Poppy Lane',    contact: 'Asha Thomas',    stage: 'Onboarding',status: 'Won',  source: 'Referral',        days: 2  },
+];
+
+const emailTemplates = {
+  Intake: {
+    subject: "Thank You for Reaching Out — Let's Talk Strategy",
+    body: "Thank you for reaching out to EVGN. We'd like to invite you to a complimentary Discovery Call — a dedicated space to understand where your brand is today, where you're headed, and how EVGN's expertise can accelerate that path.\n\nReserve your time here: [link to calendar]\n\nPlease complete the intake questions upon booking so we can arrive fully prepared.",
+  },
+  Discovery: {
+    subject: 'What to Expect Next — EVGN',
+    body: "Thank you for taking the time to connect with us today. It was great to learn more about [Brand Name] and where you're headed.\n\nHere's what to expect next: We'll review everything discussed and begin outlining a tailored scope of work. You'll receive a formal proposal within [X business days].",
+  },
+  Quote: {
+    subject: 'Your Custom Proposal from EVGN',
+    body: "Please find attached your custom proposal from EVGN, built around the goals and priorities we discussed.\n\nWe'd like to schedule a call to walk you through it together. You can book a time here: [calendar link]",
+  },
+  Contract: {
+    subject: 'Your EVGN Agreement — Ready for Signature',
+    body: "Attached you'll find the EVGN engagement agreement for your review. We've structured it around the scope we discussed.\n\nPlease review at your convenience and sign via DocuSign when ready. Don't hesitate to reach out with any questions before you do.",
+  },
+  Onboarding: {
+    subject: 'Welcome to EVGN — Your Engagement is Active',
+    body: "Payment received — thank you. Your engagement with EVGN is now active.\n\nAttached is your Client Onboarding Document, which covers everything you need to know as we get started. We're excited to be in this with you.",
+  },
+  Execution: {
+    subject: 'Sprint Kickoff — EVGN',
+    body: "We're officially in execution. This note is a brief check-in to confirm sprint priorities and ensure you have everything you need from the EVGN team.\n\nYour dedicated team is ready. Reach out any time.",
+  },
+  Lost: {
+    subject: 'Checking In — EVGN',
+    body: "Wanted to follow up on the proposal we sent over on [date]. We're holding space for [Brand Name] and want to make sure we can get started on your timeline.\n\nIf the timing has changed, we'd love to reconnect whenever you're ready.",
+  },
+};
+
+const journeyStages = ['Intake','Discovery','Quote','Contract','Onboarding','Execution','Renewal'];
+const journeyChecklist = [
+  { id:1,  stage:'Intake',     item:'Initial contact — email/share calendar link',            docusign:false },
+  { id:2,  stage:'Intake',     item:'Pre-Qualification: Collect client info / intake form',   docusign:false },
+  { id:3,  stage:'Discovery',  item:'Schedule initial discovery call',                        docusign:false },
+  { id:4,  stage:'Discovery',  item:'Initial "Discovery" Call (confirm scope, next call)',    docusign:false },
+  { id:5,  stage:'Quote',      item:'Draft Proposal / Strategy Sprint',                       docusign:false },
+  { id:6,  stage:'Quote',      item:'Follow-up if no reply in 3 days',                       docusign:false },
+  { id:7,  stage:'Quote',      item:'Share proposal; schedule estimate call',                 docusign:false },
+  { id:8,  stage:'Quote',      item:'Quote review and revision + send updated quote',         docusign:false },
+  { id:9,  stage:'Contract',   item:'Generate & Send Legal Agreement',                        docusign:false },
+  { id:10, stage:'Contract',   item:'Contract review and Signature',                          docusign:true  },
+  { id:11, stage:'Onboarding', item:'Invoice First Payment / Deposit',                        docusign:false },
+  { id:12, stage:'Onboarding', item:'Shared Google Drive Folder Set-up',                      docusign:false },
+  { id:13, stage:'Onboarding', item:'Create Client Invoice Schedule',                         docusign:false },
+  { id:14, stage:'Onboarding', item:'Send Client Onboarding doc',                             docusign:false },
+  { id:15, stage:'Onboarding', item:'Kickoff Call Scheduled',                                 docusign:false },
+  { id:16, stage:'Execution',  item:'Request Brand Guide & Access',                           docusign:false },
+  { id:17, stage:'Execution',  item:'Launch First Sprint Execution',                          docusign:false },
+  { id:18, stage:'Execution',  item:'30-Day Performance Review',                              docusign:false },
+  { id:19, stage:'Renewal',    item:'Client Testimonial',                                     docusign:false },
+  { id:20, stage:'Renewal',    item:'Negotiate Contract Renewal',                             docusign:false },
+];
+
+const stageOrder = { Intake:1, Discovery:2, Quote:3, Contract:4, Onboarding:5, Execution:6, Renewal:7 };
+const activeClients = ['My Neighbors','George Rings','Foxiecakes','Poppy Lane'];
+
+const pipelineActions = [
+  { id:1, type:'human', verb:'Approve',   task:'Intake email before sending',                  lead:'Studio Vane',    stage:'Intake',    urgency:'today'     },
+  { id:2, type:'human', verb:'Review',    task:'Contract copy before DocuSign is triggered',   lead:'Maison Briar',   stage:'Contract',  urgency:'today'     },
+  { id:3, type:'human', verb:'Follow Up', task:'Day 2 in Discovery — send next touchpoint',    lead:'Bloom & Co',     stage:'Discovery', urgency:'today'     },
+  { id:4, type:'human', verb:'Approve',   task:'Quote email — review before sending to client',lead:'The Salt House', stage:'Quote',     urgency:'today'     },
+  { id:5, type:'human', verb:'Confirm',   task:'Onboarding doc sent and acknowledged',         lead:'Poppy Lane',     stage:'Onboarding',urgency:'this week' },
+  { id:6, type:'human', verb:'Schedule',  task:'Re-engagement check-in for August 2026',       lead:'Wren & Wild',    stage:'Lost',      urgency:'this week' },
+];
+
+const automations = [
+  { name:'Calendly',       icon:'CAL', purpose:'Discovery call self-booking',    stage:'Intake → Discovery', status:'active',         triggeredBy:'human', description:'Booking link included in intake email. Prospect self-schedules — no manual coordination needed.' },
+  { name:'DocuSign',       icon:'DOC', purpose:'Contract e-signature',           stage:'Contract',           status:'active',         triggeredBy:'human', description:'Agreement sent via DocuSign after team reviews contract copy. Signing status syncs back automatically.' },
+  { name:'Google Drive',   icon:'GDR', purpose:'Client folder creation',         stage:'Onboarding',         status:'pending',        triggeredBy:'auto',  description:'Will auto-create shared folder structure on contract signature. Currently created manually.' },
+  { name:'Google Calendar',icon:'GCL', purpose:'Kickoff call scheduling',        stage:'Onboarding',         status:'pending',        triggeredBy:'auto',  description:'Will auto-send scheduling link after deposit payment is received. Not yet configured.' },
+  { name:'Stripe',         icon:'STR', purpose:'Invoice + deposit collection',   stage:'Onboarding',         status:'pending',        triggeredBy:'auto',  description:'Automated invoice triggered on contract execution. CRM integration pending setup.' },
+  { name:'Zapier',         icon:'ZAP', purpose:'Stage transition notifications', stage:'All stages',         status:'not-configured', triggeredBy:'auto',  description:'Will fire notifications and next-step automations on pipeline stage changes. Not yet configured.' },
+];
+
+const teamTasks = [
+  { id:1,  person:'Lindsay', role:'Account Lead', client:'Foxiecakes',   task:'Facilitate wholesale strategy working session',           due:'May 30', agendaTask:false },
+  { id:2,  person:'Lindsay', role:'Account Lead', client:'George Rings', task:'Confirm Vault event details — share with Chelsea',         due:'May 30', agendaTask:false },
+  { id:3,  person:'Lindsay', role:'Account Lead', client:'Foxiecakes',   task:'Align on post-purchase offer and wholesale call timing',   due:'Jun 3',  agendaTask:false },
+  { id:4,  person:'Lindsay', role:'Account Lead', client:'George Rings', task:'Review H2 priorities framework',                           due:'Jun 6',  agendaTask:false },
+  { id:5,  person:'Lindsay', role:'Account Lead', client:'Foxiecakes',   task:'Prepare agenda for Weekly Sprint (May 28)',                due:'May 28', agendaTask:true  },
+  { id:6,  person:'Lindsay', role:'Account Lead', client:'George Rings', task:'Prepare agenda for Bi-weekly Check-in (May 29)',           due:'May 29', agendaTask:true  },
+  { id:7,  person:'Lindsay', role:'Account Lead', client:'My Neighbors', task:'Prepare agenda for Monthly Strategy Call (Jun 3)',         due:'Jun 2',  agendaTask:true  },
+  { id:8,  person:'Megan',   role:'Marketing',    client:'My Neighbors', task:'Share Q3 campaign brief with client for feedback',         due:'May 29', agendaTask:false },
+  { id:9,  person:'Megan',   role:'Marketing',    client:'George Rings', task:'Finalize brand positioning draft — send for review',       due:'Jun 13', agendaTask:false },
+  { id:10, person:'Megan',   role:'Marketing',    client:'Foxiecakes',   task:'Deliver Q3 Instagram content calendar for approval',       due:'Jun 3',  agendaTask:false },
+  { id:11, person:'Carly',   role:'Marketing',    client:'Foxiecakes',   task:'Finalize SEO content plan — present to client',            due:'Jun 3',  agendaTask:false },
+  { id:12, person:'Carly',   role:'Marketing',    client:'Foxiecakes',   task:'Pop-up strategy recommendation — send to client',          due:'May 30', agendaTask:false },
+  { id:13, person:'Carly',   role:'Marketing',    client:'George Rings', task:'Vault Sale landing page — complete round 2 edits',         due:'May 29', agendaTask:false },
+  { id:14, person:'Carly',   role:'Marketing',    client:'George Rings', task:'Meta + Google ad creative — complete draft',               due:'Jun 6',  agendaTask:false },
+  { id:15, person:'Bryenn',  role:'Paid Media',   client:'Foxiecakes',   task:'Meta ad performance weekly review — flag variances',       due:'May 28', agendaTask:false },
+  { id:16, person:'Bryenn',  role:'Paid Media',   client:'George Rings', task:'Attribution model — initial build and share',              due:'Jun 6',  agendaTask:false },
+  { id:17, person:'Alex',    role:'Operations',   client:'My Neighbors', task:'Fulfillment SOP — identify bottleneck, update client',     due:'May 30', agendaTask:false },
+  { id:18, person:'Alex',    role:'Operations',   client:'Foxiecakes',   task:'Wholesale outreach tracker — ready, awaiting client input', due:'May 28', agendaTask:false },
+  { id:19, person:'Alex',    role:'Operations',   client:'George Rings', task:'Vault Sale discount analysis (10% on older inventory)',     due:'May 29', agendaTask:false },
+];
+
+const clientAgendas = {
+  'My Neighbors': {
+    meetingType: 'Monthly Strategy Call',
+    nextDate: 'Jun 3, 2026',
+    attendees: 'Client, Lindsay, Megan, Alex',
+    sections: [
+      { title:'Business Updates', owner:'Client', duration:'10 min', items:['Monthly sales and fulfillment performance review','Vendor relationship and SOP status update','Any operational blockers or priorities to raise'] },
+      { title:'Marketing Strategy and Execution', owner:'Megan', duration:'20 min', items:['Q3 campaign brief walkthrough and client feedback','Influencer partnership evaluation update','Instagram content calendar review and approval'] },
+      { title:'Operations Update', owner:'Alex', duration:'10 min', items:['Fulfillment SOP bottleneck resolution plan','Q3 operational priorities and timeline'] },
+      { title:'Next Steps + Setup for Next Session', owner:'Lindsay', duration:'5 min', items:['Confirm client action items before next call','Identify key tests and priorities for upcoming week','Outline focus areas and agenda for next check-in'] },
+    ],
+  },
+  'George Rings': {
+    meetingType: 'Bi-weekly Check-in',
+    nextDate: 'May 29, 2026',
+    attendees: 'Chelsea, Lindsay, Alex, Carly',
+    sections: [
+      { title:'Business Updates', owner:'Chelsea', duration:'10 min', items:['Collector anecdotes and sales trends','Baseline metrics review','Vault Sale inventory sheet and COGS status'] },
+      { title:'Priorities', owner:'Chelsea + Carly', duration:'20 min', items:['Shopify fixes — post-purchase survey, notes, and wish list','Vault Sale landing page round 2 (copy, flow, priority images)','Meta + Google ad creative review and launch readiness'] },
+      { title:'Discussion', owner:'Carly + Alex', duration:'20 min', items:['Attribution work update','Creative orientation kick-off with chosen images','Month end close status','Mailer updates — in-home date, graphic edits, comms plan'] },
+      { title:'Grounding for Next Time', owner:'Lindsay', duration:'5 min', items:['Vault event details and planning','H2 priorities alignment','Confirm next check-in agenda focus'] },
+    ],
+  },
+  'Foxiecakes': {
+    meetingType: 'Weekly Sprint',
+    nextDate: 'May 28, 2026',
+    attendees: 'Biz, Julianna, Lindsay, Carly, Bryenn, Megan',
+    sections: [
+      { title:'Business Updates', owner:'Biz + Julianna', duration:'10 min', items:['Product sales performance and demand trends','Wholesale strategy and line sheet updates','Packaging updates and Utica sample/pricing follow-up','Retail outreach opportunities (Brooklyn Botanic Garden, Big Night)','Creator/affiliate partnership updates and feedback'] },
+      { title:'Marketing Strategy and Execution', owner:'Carly', duration:'20 min', items:['SEO content plan — timelines, keyword targets, and blog strategy','Email + SMS capture strategy direction','Pop-up recommendation (wheel vs. standard)','Hamptons kit lifestyle shoot direction'] },
+      { title:'Paid Media Strategy and Execution', owner:'Bryenn', duration:'15 min', items:["Meta ad performance update and optimization plan","Mother's Day results and follow-on content strategy","Jessica creator campaign + affiliate tracking integration","Testing roadmap: creative variations, landing pages, gifting angles","Budget allocation and scaling plan"] },
+      { title:'Next Steps + Setup for Next Session', owner:'Lindsay', duration:'5 min', items:['Align on wholesale strategy working session inputs','Confirm COGS spreadsheet timing','Identify key tests and priorities for upcoming week','Outline focus areas for next check-in'] },
+    ],
+  },
+};
+
+function getCheckedItems(lead) {
+  const lo = stageOrder[lead.stage] || 0;
+  return journeyChecklist.map(item => {
+    const io = stageOrder[item.stage] || 0;
+    const checked = io < lo || (io === lo && lead.status === 'Won');
+    let dsStatus = null;
+    if (item.docusign) {
+      if (activeClients.includes(lead.company)) dsStatus = 'Signed';
+      else if (lead.stage === 'Contract') dsStatus = 'Awaiting Signature';
+      else if (io < lo) dsStatus = 'Signed';
+    }
+    return { ...item, checked, dsStatus };
+  });
+}
+
+const knowledgeBase = {
+  transcript: { name: 'Strategy Call', date: 'May 14, 2026' },
+  answered: 3, total: 12,
+  questions: [
+    { id:1,  section:'The Business as It Exists Today',    q:'Where does revenue truly come from today? (By channel, product type, client type)',                          answered:true,  excerpt:'"We\'re primarily product-driven — about 70% comes from our retail partnerships, the remaining 30% from direct. The custom work is beautiful but unpredictable month to month."' },
+    { id:2,  section:'The Business as It Exists Today',    q:'Which product offerings feel most reliable? Which feel fragile or unpredictable?',                          answered:false, excerpt:null },
+    { id:3,  section:'The Business as It Exists Today',    q:'Where is revenue concentrated in ways that may not be obvious day-to-day?',                                  answered:false, excerpt:null },
+    { id:4,  section:'Growth Drivers and Tradeoffs',       q:'What growth vectors are working — and which are deprioritized?',                                             answered:false, excerpt:null },
+    { id:5,  section:'Growth Drivers and Tradeoffs',       q:'How are you segmenting and nurturing customers currently?',                                                  answered:false, excerpt:null },
+    { id:6,  section:'Constraints and Leverage',           q:'What is the primary constraint today: demand, manufacturing capacity, capital, or leadership bandwidth?',   answered:true,  excerpt:'"Honestly it\'s my bandwidth. The team is lean and I\'m still in too many decisions."' },
+    { id:7,  section:'Constraints and Leverage',           q:'Which parts of the business generate the highest return on attention?',                                     answered:false, excerpt:null },
+    { id:8,  section:'2025 Learnings',                     q:'What were you hoping to prove or learn in 2025?',                                                            answered:false, excerpt:null },
+    { id:9,  section:'2025 Learnings',                     q:'What surprised you — positively or negatively?',                                                            answered:true,  excerpt:'"We didn\'t expect the corporate gifting segment to perform the way it did. That\'s been the biggest upside."' },
+    { id:10, section:'2025 Learnings',                     q:'Which assumptions about clients, pricing, throughput, or retail changed this year?',                        answered:false, excerpt:null },
+    { id:11, section:'Looking Ahead',                      q:'Which 2026 decisions would be hardest to reverse?',                                                          answered:false, excerpt:null },
+    { id:12, section:'Looking Ahead',                      q:'If 2026 is successful, what capabilities will the business have that it does not have today?',               answered:false, excerpt:null },
+  ],
+};
+
+const opsAll = [
+  { id:1, client:'My Neighbors', workstream:'Q3 Marketing Campaign Build',       owner:'Megan', status:'On Track',       due:'Jun 6'  },
+  { id:2, client:'My Neighbors', workstream:'Fulfillment SOP Update',             owner:'Alex',  status:'Needs Attention',due:'May 30' },
+  { id:3, client:'George Rings', workstream:'2026 Strategic Planning Session',   owner:'Carly', status:'On Track',       due:'Jun 13' },
+  { id:4, client:'George Rings', workstream:'Brand Positioning Refresh',         owner:'Megan', status:'On Track',       due:'Jun 20' },
+  { id:5, client:'Foxiecakes',   workstream:'Instagram Content Calendar Q3',     owner:'Megan', status:'On Track',       due:'Jun 3'  },
+  { id:6, client:'Foxiecakes',   workstream:'Wholesale Outreach Tracker',        owner:'Alex',  status:'Blocked',        due:'May 28' },
+];
+
+const meetingCadence = [
+  { client:'My Neighbors', type:'Monthly Strategy Call', date:'Jun 3, 2026'  },
+  { client:'George Rings', type:'Bi-weekly Check-in',    date:'May 29, 2026' },
+  { client:'Foxiecakes',   type:'Weekly Sprint',         date:'May 28, 2026' },
+];
+
+const opsClient = {
+  'My Neighbors': {
+    sprint: 'Sprint 4 — May–June 2026',
+    workstreams: [
+      { name:'Q3 Marketing Campaign Build', owner:'Megan', status:'In Review',       due:'Jun 6',  update:"The campaign strategy is drafted and in internal review. We'll share the brief for your feedback by Thursday.", progress:0.6  },
+      { name:'Fulfillment SOP Update',      owner:'Alex',  status:'Needs Attention', due:'May 30', update:"We've identified the bottleneck in your current process. We're waiting on your vendor contact to confirm the new terms.", progress:0.35 },
+    ],
+    actions: [
+      'Review Q3 campaign brief and share feedback by Thursday, May 29',
+      'Confirm fulfillment vendor contact: forward the thread with Pacific Supply',
+    ],
+  },
+  'George Rings': {
+    sprint: 'Sprint 3 — May–June 2026',
+    workstreams: [
+      { name:'2026 Strategic Planning Session', owner:'Carly', status:'In Review', due:'Jun 13', update:"The session notes have been synthesized and the strategic framework is being finalized. You'll receive the full document next week.", progress:0.75 },
+      { name:'Brand Positioning Refresh',       owner:'Megan', status:'In Review', due:'Jun 20', update:'Competitive analysis is complete. Megan is now drafting the positioning statements for your review.',                              progress:0.45 },
+    ],
+    actions: [
+      'Approve subject line variants for June email campaign by Friday',
+      'Share your top three retail partner priorities for Q3 positioning work',
+    ],
+  },
+  'Foxiecakes': {
+    sprint: 'Sprint 5 — May–June 2026',
+    workstreams: [
+      { name:'Instagram Content Calendar Q3', owner:'Megan', status:'In Review', due:'Jun 3',  update:'The full Q3 content calendar is drafted and in review. Expect it in your inbox for approval by end of week.', progress:0.8  },
+      { name:'Wholesale Outreach Tracker',     owner:'Alex',  status:'Blocked',   due:'May 28', update:"The outreach tracker is built and ready — we're waiting on your distributor contact before we can begin.",     progress:0.2  },
+    ],
+    actions: [
+      'Send Pacific Northwest Specialty Foods contact to Alex today',
+      'Confirm photography direction: seasonal or core product focus for Q3',
+    ],
+  },
+};
+
+const mktAlerts = [
+  { client:'Foxiecakes',   msg:'Paid Social ROAS dropped 34% week-over-week.',    action:'Review media mix before next budget cycle.',                         date:'May 26' },
+  { client:'George Rings', msg:'Email open rate down to 18% (benchmark: 28%).',    action:'Subject line testing recommended for June campaign.',                date:'May 26' },
+];
+
+const mktMetrics = {
+  'My Neighbors': { period:'May 2026', metrics:[
+    { label:'Paid Social ROAS', value:'3.2x', prev:'2.8x', dir:'up',       flag:false },
+    { label:'Email Open Rate',  value:'31%',  prev:'27%',  dir:'up',       flag:false },
+    { label:'New Leads (MTD)',  value:'48',   prev:'31',   dir:'up',       flag:false },
+    { label:'CAC',              value:'$84',  prev:'$102', dir:'down-good',flag:false },
+  ]},
+  'George Rings': { period:'May 2026', metrics:[
+    { label:'Paid Social ROAS', value:'1.9x', prev:'2.9x', dir:'down',    flag:true  },
+    { label:'Email Open Rate',  value:'18%',  prev:'28%',  dir:'down',    flag:true  },
+    { label:'New Leads (MTD)',  value:'22',   prev:'22',   dir:'flat',    flag:false },
+    { label:'CAC',              value:'$138', prev:'$119', dir:'up-bad',  flag:true  },
+  ]},
+  'Foxiecakes': { period:'May 2026', metrics:[
+    { label:'Paid Social ROAS', value:'2.1x', prev:'3.2x', dir:'down',    flag:true  },
+    { label:'Email Open Rate',  value:'24%',  prev:'21%',  dir:'up',      flag:false },
+    { label:'New Leads (MTD)',  value:'37',   prev:'29',   dir:'up',      flag:false },
+    { label:'CAC',              value:'$91',  prev:'$108', dir:'down-good',flag:false },
+  ]},
+};
+
+const mktClientView = {
+  'My Neighbors': {
+    lede:"Your paid campaigns are outperforming last month, and your email list is growing. Here's where things stand.",
+    campaign:{ name:'Q3 Campaign — "Summer Giving"', objective:'Drive neighborhood gifting purchases through community targeting', timeline:'Jun 15 – Aug 31, 2026', status:'In production — Brief in review', channels:['Instagram + Facebook Paid','Email (3-part sequence)','Organic content (8 posts)'] },
+    channels:[{ name:'Paid Social',alloc:42,perf:88 },{ name:'Email',alloc:28,perf:76 },{ name:'Organic',alloc:20,perf:62 },{ name:'Partnerships',alloc:10,perf:45 }],
+  },
+  'George Rings': {
+    lede:"Your email metrics need attention this month — we're already working on a fix. Here's the full picture.",
+    campaign:{ name:'June Brand Refresh Campaign', objective:'Re-engage lapsed customers with updated brand positioning', timeline:'Jun 1 – Jun 30, 2026', status:'In planning — Positioning work in progress', channels:['Email (4-part sequence)','Organic Social','Paid Social (retargeting)'] },
+    channels:[{ name:'Email',alloc:45,perf:42 },{ name:'Organic',alloc:30,perf:68 },{ name:'Paid Social',alloc:15,perf:38 },{ name:'Partnerships',alloc:10,perf:55 }],
+  },
+  'Foxiecakes': {
+    lede:"Email and organic are performing well — paid social is the focus area for June. Here's your full picture.",
+    campaign:{ name:'Q3 Content Push — "Baked with Love"', objective:'Grow organic reach and wholesale brand awareness', timeline:'Jul 1 – Sep 30, 2026', status:'Pre-production — Content calendar in review', channels:['Instagram Organic (12 posts)','Email (2-part sequence)','Paid Social'] },
+    channels:[{ name:'Organic',alloc:40,perf:72 },{ name:'Email',alloc:25,perf:65 },{ name:'Paid Social',alloc:25,perf:38 },{ name:'Partnerships',alloc:10,perf:58 }],
+  },
+};
+
+const mktPerformance = {
+  'My Neighbors': {
+    period: { week: 'May 20–26', month: 'May 2026' },
+    weekly:  { revenue:{v:9800,p:8400,chg:17},  newRev:{v:4200,p:3600,chg:17},  retRate:{v:57,p:54,chg:6},   aov:{v:89,p:84,chg:6},    conv:{v:2.8,p:2.6,chg:8},   mer:{v:3.8,p:3.2,chg:19},  roas:{v:3.2,p:2.8,chg:14},  cac:{v:84,p:102,chg:-18},  sessions:{v:4200,p:3900,chg:8},   mobile:68 },
+    monthly: { revenue:{v:42800,p:38200,chg:12}, newRev:{v:18400,p:16200,chg:14},retRate:{v:57,p:54,chg:6},   aov:{v:89,p:84,chg:6},    conv:{v:2.8,p:2.6,chg:8},   mer:{v:3.8,p:3.2,chg:19},  roas:{v:3.2,p:2.8,chg:14},  cac:{v:84,p:102,chg:-18},  sessions:{v:18400,p:16800,chg:10},mobile:68 },
+    channels: [
+      { name:'Meta',    spend:4200,  roas:3.8, revenue:15960 },
+      { name:'Google',  spend:2800,  roas:2.4, revenue:6720  },
+      { name:'Email',   spend:800,   roas:12.4,revenue:9920  },
+      { name:'Organic', spend:0,     roas:null,revenue:10200 },
+    ],
+    topPages: [
+      { page:'/collections/neighbor-gifts', revenue:12400, sessions:3200 },
+      { page:'/products/community-basket',  revenue:8200,  sessions:1800 },
+      { page:'/collections/holiday',        revenue:5100,  sessions:1100 },
+    ],
+    email: { popup:{on:true,rate:3.2}, welcome:true, cart:true, postPurchase:true, cadence:'2× / week' },
+    revTrend: [38200,40100,39800,42800], revLabels:['Feb','Mar','Apr','May'],
+  },
+  'George Rings': {
+    period: { week: 'May 20–26', month: 'May 2026' },
+    weekly:  { revenue:{v:6400,p:7200,chg:-11}, newRev:{v:2900,p:3300,chg:-12},retRate:{v:34,p:36,chg:-6},  aov:{v:246,p:228,chg:8},  conv:{v:1.4,p:1.8,chg:-22}, mer:{v:1.8,p:2.6,chg:-31}, roas:{v:1.9,p:2.9,chg:-34}, cac:{v:138,p:119,chg:16},  sessions:{v:2200,p:2400,chg:-8},  mobile:72 },
+    monthly: { revenue:{v:28500,p:31200,chg:-9},newRev:{v:12800,p:14100,chg:-9},retRate:{v:34,p:36,chg:-6},  aov:{v:246,p:228,chg:8},  conv:{v:1.4,p:1.8,chg:-22}, mer:{v:1.8,p:2.6,chg:-31}, roas:{v:1.9,p:2.9,chg:-34}, cac:{v:138,p:119,chg:16},  sessions:{v:9800,p:10600,chg:-8}, mobile:72 },
+    channels: [
+      { name:'Meta',    spend:8400,  roas:1.6, revenue:13440 },
+      { name:'Google',  spend:3200,  roas:2.2, revenue:7040  },
+      { name:'Email',   spend:400,   roas:8.1, revenue:3240  },
+      { name:'Organic', spend:0,     roas:null,revenue:4780  },
+    ],
+    topPages: [
+      { page:'/collections/vault-sale',    revenue:9200, sessions:2400 },
+      { page:'/products/signature-ring',   revenue:7800, sessions:1600 },
+      { page:'/collections/gold',          revenue:5600, sessions:1200 },
+    ],
+    email: { popup:{on:false,rate:null}, welcome:true, cart:true, postPurchase:false, cadence:'1× / month' },
+    revTrend: [32800,31400,31200,28500], revLabels:['Feb','Mar','Apr','May'],
+  },
+  'Foxiecakes': {
+    period: { week: 'May 20–26', month: 'May 2026' },
+    weekly:  { revenue:{v:4400,p:3900,chg:13},  newRev:{v:2000,p:1700,chg:18},  retRate:{v:48,p:44,chg:9},   aov:{v:52,p:48,chg:8},    conv:{v:3.2,p:2.9,chg:10},  mer:{v:2.8,p:2.4,chg:17},  roas:{v:2.1,p:3.2,chg:-34}, cac:{v:91,p:108,chg:-16},  sessions:{v:5100,p:4600,chg:11},  mobile:78 },
+    monthly: { revenue:{v:19200,p:17400,chg:10}, newRev:{v:8600,p:7400,chg:16},  retRate:{v:48,p:44,chg:9},   aov:{v:52,p:48,chg:8},    conv:{v:3.2,p:2.9,chg:10},  mer:{v:2.8,p:2.4,chg:17},  roas:{v:2.1,p:3.2,chg:-34}, cac:{v:91,p:108,chg:-16},  sessions:{v:22100,p:19800,chg:12},mobile:78 },
+    channels: [
+      { name:'Meta',    spend:3800,  roas:2.4, revenue:9120  },
+      { name:'Google',  spend:1200,  roas:1.8, revenue:2160  },
+      { name:'Email',   spend:600,   roas:9.2, revenue:5520  },
+      { name:'Organic', spend:0,     roas:null,revenue:2400  },
+    ],
+    topPages: [
+      { page:'/products/hamptons-kit',  revenue:6800, sessions:4200 },
+      { page:'/collections/gift-sets',  revenue:4200, sessions:2100 },
+      { page:'/products/signature-box', revenue:3900, sessions:1800 },
+    ],
+    email: { popup:{on:true,rate:2.1}, welcome:true, cart:true, postPurchase:false, cadence:'3× / week' },
+    revTrend: [15200,16800,17400,19200], revLabels:['Feb','Mar','Apr','May'],
+  },
+};
+
+
+/* ── SHARED COMPONENTS ───────────────────────────────────── */
+
+function SlideOver({ open, onClose, title, subtitle, children, width = '520px' }) {
+  React.useEffect(() => {
+    document.body.style.overflow = open ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [open]);
+  if (!open) return null;
+  return (
+    <>
+      <div className="overlay" onClick={onClose} />
+      <div style={{ position:'fixed',top:0,right:0,height:'100vh',width,maxWidth:'95vw',background:'var(--color-white)',zIndex:50,display:'flex',flexDirection:'column',animation:'slideInRight 280ms cubic-bezier(0.4,0,0.2,1)',boxShadow:'-4px 0 32px rgba(44,24,16,0.12)' }}>
+        <div style={{ display:'flex',alignItems:'flex-start',justifyContent:'space-between',padding:'28px 32px 22px',borderBottom:'1px solid var(--color-border-subtle)',gap:16 }}>
+          <div>
+            {subtitle && <div style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--color-text-tertiary)',marginBottom:6 }}>{subtitle}</div>}
+            <h2 style={{ fontFamily:'var(--font-display)',fontSize:22,fontWeight:400,color:'var(--color-text-primary)',lineHeight:1.2 }}>{title}</h2>
+          </div>
+          <button onClick={onClose} style={{ width:32,height:32,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--color-text-tertiary)',background:'var(--color-cream)',border:'1px solid var(--color-border)',borderRadius:'50%',cursor:'pointer',flexShrink:0 }}>
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+          </button>
+        </div>
+        <div style={{ flex:1,overflowY:'auto',padding:'26px 32px' }}>{children}</div>
+      </div>
+    </>
+  );
+}
+
+function PageHeader({ section, title, badge = true }) {
+  return (
+    <div style={{ display:'flex',alignItems:'flex-end',justifyContent:'space-between',padding:'40px 40px 0',flexShrink:0 }}>
+      <div>
+        {section && <div style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,letterSpacing:'0.12em',textTransform:'uppercase',color:'var(--color-text-tertiary)',marginBottom:6 }}>{section}</div>}
+        <h1 style={{ fontFamily:'var(--font-display)',fontSize:36,fontWeight:400,color:'var(--color-text-primary)' }}>{title}</h1>
+      </div>
+      {badge && <div style={{ paddingBottom:4 }}><span className="phase-live">Live · Phase 1</span></div>}
+    </div>
+  );
+}
+
+function TrendArrow({ dir }) {
+  const good = dir === 'up' || dir === 'down-good';
+  const bad  = dir === 'down' || dir === 'up-bad';
+  const color = good ? '#5a7a58' : bad ? '#8a4030' : 'var(--color-text-tertiary)';
+  if (dir === 'flat') return <span style={{ color,marginLeft:4,fontSize:12 }}>→</span>;
+  return (
+    <svg width="11" height="11" viewBox="0 0 10 10" fill="none" style={{ display:'inline-block',marginLeft:4,verticalAlign:'middle' }}>
+      {good
+        ? <path d="M5 8V2M2 5l3-3 3 3" stroke={color} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+        : <path d="M5 2v6M2 5l3 3 3-3" stroke={color} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>}
+    </svg>
+  );
+}
+
+
+/* ── PAGE: HOME ──────────────────────────────────────────── */
+
+function statusClass(s) {
+  const m = { 'In review':'st-in-review','Awaiting your input':'st-awaiting','Drafting':'st-drafting','Blocked':'st-blocked' };
+  return 'status-tag ' + (m[s] || 'st-in-review');
+}
+
+function HomePage({ activeClient }) {
+  const brief = mondayBriefs[activeClient] || mondayBriefs['My Neighbors'];
+  return (
+    <div className="page-enter" style={{ flex:1,overflowY:'auto',background:'var(--color-cream)',minHeight:'100vh' }}>
+      <div style={{ maxWidth:700,margin:'0 auto',padding:'64px 40px 80px' }}>
+
+        <header style={{ marginBottom:52 }}>
+          <div style={{ display:'flex',alignItems:'center',gap:8,marginBottom:16 }}>
+            <span style={{ fontFamily:'var(--font-body)',fontSize:11,fontWeight:500,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--color-text-tertiary)' }}>{brief.weekOf}</span>
+            <span style={{ color:'var(--color-text-tertiary)',opacity:.4 }}>·</span>
+            <span style={{ fontFamily:'var(--font-body)',fontSize:11,fontWeight:500,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--color-text-tertiary)' }}>The Monday Brief</span>
+          </div>
+          <h1 style={{ fontFamily:'var(--font-display)',fontSize:52,fontWeight:300,color:'var(--color-text-primary)',letterSpacing:'-0.01em',lineHeight:1.05,marginBottom:20 }}>{activeClient}</h1>
+          <p style={{ fontFamily:'var(--font-body)',fontSize:15,fontWeight:300,color:'var(--color-text-secondary)',lineHeight:1.65,fontStyle:'italic' }}>{brief.greeting}</p>
+        </header>
+
+        {/* ── PRIORITY FIRST ── */}
+        <section style={{ marginBottom:52 }}>
+          <div style={{ background:'var(--color-white)',border:'1px solid var(--color-border)',borderLeft:'3px solid var(--color-gold)',borderRadius:2,padding:'28px 32px 24px' }}>
+            <div style={{ display:'flex',alignItems:'center',fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,letterSpacing:'0.12em',textTransform:'uppercase',color:'var(--color-gold)',marginBottom:16 }}>
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ marginRight:6 }}><circle cx="5" cy="5" r="4" stroke="var(--color-gold)" strokeWidth="1.5"/><circle cx="5" cy="5" r="2" fill="var(--color-gold)"/></svg>
+              Your One Priority This Week
+            </div>
+            <p style={{ fontFamily:'var(--font-display)',fontSize:22,fontWeight:500,color:'var(--color-text-primary)',lineHeight:1.3,marginBottom:12 }}>{brief.priority.headline}</p>
+            <p style={{ fontFamily:'var(--font-body)',fontSize:14,fontWeight:300,color:'var(--color-text-secondary)',lineHeight:1.65,marginBottom:20,fontStyle:'italic' }}>{brief.priority.body}</p>
+            {brief.priority.subtasks && brief.priority.subtasks.length > 0 && (
+              <div style={{ borderTop:'1px solid var(--color-border-subtle)',paddingTop:16,marginBottom:16 }}>
+                <div style={{ fontFamily:'var(--font-body)',fontSize:9.5,fontWeight:600,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--color-gold)',opacity:0.7,marginBottom:10 }}>Sub-tasks</div>
+                {brief.priority.subtasks.map((st,i) => (
+                  <div key={i} style={{ display:'flex',alignItems:'flex-start',gap:9,marginBottom:i<brief.priority.subtasks.length-1?7:0 }}>
+                    <span style={{ width:4,height:4,borderRadius:'50%',background:'var(--color-gold)',opacity:0.5,flexShrink:0,marginTop:6 }} />
+                    <span style={{ fontFamily:'var(--font-body)',fontSize:12.5,fontWeight:300,color:'var(--color-text-secondary)',lineHeight:1.55 }}>{st}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div style={{ fontFamily:'var(--font-body)',fontSize:11,fontWeight:500,color:'var(--color-text-tertiary)',letterSpacing:'0.04em' }}>{brief.priority.owner}</div>
+          </div>
+        </section>
+
+        {/* ── WHAT'S DONE ── */}
+        <section style={{ marginBottom:52 }}>
+          <div style={{ display:'flex',alignItems:'center',fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,letterSpacing:'0.12em',textTransform:'uppercase',color:'var(--color-text-tertiary)',marginBottom:20 }}>
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ marginRight:8 }}><circle cx="6" cy="6" r="5.25" stroke="var(--color-sage)" strokeWidth="1.25"/><path d="M3.5 6l2 2 3-3.5" stroke="var(--color-sage)" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            What's Done
+          </div>
+          {brief.done.map((item, i) => (
+            <div key={i} style={{ display:'flex',alignItems:'flex-start',gap:12,padding:'12px 0',borderBottom:'1px solid var(--color-border-subtle)' }}>
+              <svg width="11" height="8" viewBox="0 0 11 8" fill="none" style={{ marginTop:4,flexShrink:0 }}><path d="M1 4l3 3 6-6" stroke="var(--color-sage)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              <span style={{ fontFamily:'var(--font-body)',fontSize:14.5,fontWeight:300,color:'var(--color-text-tertiary)',textDecoration:'line-through',textDecorationColor:'rgba(139,158,137,0.4)',lineHeight:1.5 }}>{item}</span>
+            </div>
+          ))}
+        </section>
+
+        {/* ── WHAT'S IN MOTION ── */}
+        <section>
+          <div style={{ display:'flex',alignItems:'center',fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,letterSpacing:'0.12em',textTransform:'uppercase',color:'var(--color-text-tertiary)',marginBottom:20 }}>
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ marginRight:8 }}><circle cx="6" cy="6" r="5.25" stroke="var(--color-gold-muted)" strokeWidth="1.25"/><circle cx="6" cy="6" r="2.5" fill="var(--color-gold-muted)" opacity=".6"/></svg>
+            What's In Motion
+          </div>
+          {brief.inMotion.map((item, i) => (
+            <div key={i} style={{ display:'flex',alignItems:'center',justifyContent:'space-between',padding:'13px 0',borderBottom:'1px solid var(--color-border-subtle)',gap:16 }}>
+              <div style={{ display:'flex',alignItems:'center',gap:12,flex:1,minWidth:0 }}>
+                <span style={{ width:7,height:7,borderRadius:'50%',background:'var(--color-gold-muted)',flexShrink:0,boxShadow:'0 0 0 3px rgba(212,184,150,0.2)',display:'inline-block' }} />
+                <span style={{ fontFamily:'var(--font-body)',fontSize:14.5,fontWeight:400,color:'var(--color-text-primary)',lineHeight:1.4 }}>{item.item}</span>
+              </div>
+              <div style={{ display:'flex',alignItems:'center',gap:10,flexShrink:0 }}>
+                <span style={{ fontFamily:'var(--font-body)',fontSize:11,fontWeight:400,color:'var(--color-text-tertiary)',whiteSpace:'nowrap' }}>{item.owner} · {item.dept}</span>
+                <span className={statusClass(item.status)}>{item.status}</span>
+              </div>
+            </div>
+          ))}
+        </section>
+
+      </div>
+    </div>
+  );
+}
+
+
+/* ── PAGE: PIPELINE ──────────────────────────────────────── */
+
+const verbColors = {
+  'Approve':    { bg:'rgba(201,168,76,0.14)',  color:'#9a7a2c',  border:'rgba(201,168,76,0.3)'  },
+  'Review':     { bg:'rgba(92,61,46,0.09)',    color:'#5C3D2E',  border:'rgba(92,61,46,0.2)'   },
+  'Follow Up':  { bg:'rgba(139,158,137,0.14)', color:'#5a7a58',  border:'rgba(139,158,137,0.3)' },
+  'Confirm':    { bg:'rgba(92,61,46,0.09)',    color:'#5C3D2E',  border:'rgba(92,61,46,0.2)'   },
+  'Schedule':   { bg:'rgba(201,168,76,0.14)',  color:'#9a7a2c',  border:'rgba(201,168,76,0.3)'  },
+};
+
+const statusColors = {
+  'active':          { bg:'rgba(139,158,137,0.14)', color:'#5a7a58',  border:'rgba(139,158,137,0.3)', label:'Active' },
+  'pending':         { bg:'rgba(201,168,76,0.14)',  color:'#9a7a2c',  border:'rgba(201,168,76,0.3)',  label:'Pending setup' },
+  'not-configured':  { bg:'rgba(160,149,139,0.12)', color:'#8a7a6e',  border:'rgba(160,149,139,0.25)',label:'Not configured' },
+};
+
+function PipelinePage() {
+  const [emailSlide, setEmailSlide] = React.useState(null);
+  const [journeySlide, setJourneySlide] = React.useState(null);
+  const [doneActions, setDoneActions] = React.useState([]);
+  const lostLeads = pipelineLeads.filter(l => l.status === 'Lost');
+  const byStage = s => pipelineLeads.filter(l => l.stage === s);
+  const stages = ['Intake','Discovery','Quote','Contract','Onboarding','Execution'];
+  const todayActions = pipelineActions.filter(a => a.urgency === 'today' && !doneActions.includes(a.id));
+  const weekActions  = pipelineActions.filter(a => a.urgency === 'this week' && !doneActions.includes(a.id));
+
+  return (
+    <div className="page-enter" style={{ flex:1,display:'flex',flexDirection:'column',background:'var(--color-cream)',minHeight:'100vh',overflowY:'auto' }}>
+      <PageHeader section="Intake" title="Pipeline" />
+
+      {lostLeads.length > 0 && (
+        <div style={{ margin:'24px 40px 0',background:'var(--color-white)',border:'1px solid var(--color-border)',borderRadius:4,padding:'14px 20px',flexShrink:0 }}>
+          <div style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--color-text-tertiary)',marginBottom:10 }}>Follow-Up Reminders</div>
+          {lostLeads.map(lead => (
+            <div key={lead.id} style={{ display:'flex',alignItems:'center',justifyContent:'space-between',gap:20 }}>
+              <p style={{ fontFamily:'var(--font-body)',fontSize:13,fontWeight:300,color:'var(--color-text-secondary)',lineHeight:1.5,fontStyle:'italic' }}>
+                <strong style={{ fontWeight:500,fontStyle:'normal',color:'var(--color-text-primary)' }}>{lead.company}</strong>
+                {' — '}{lead.contact} marked lost {lead.days} days ago (reason: Timing). Schedule a re-engagement check-in for August 2026?
+              </p>
+              <div style={{ display:'flex',gap:8,flexShrink:0 }}>
+                <button style={{ fontFamily:'var(--font-body)',fontSize:11,fontWeight:400,color:'var(--color-text-secondary)',background:'var(--color-cream)',border:'1px solid var(--color-border)',borderRadius:3,padding:'5px 11px',cursor:'pointer' }}>Snooze 30 days</button>
+                <button onClick={() => setEmailSlide({ lead, tpl: emailTemplates.Lost })} style={{ fontFamily:'var(--font-body)',fontSize:11,fontWeight:500,color:'var(--color-brown-deep)',background:'rgba(201,168,76,0.15)',border:'1px solid rgba(201,168,76,0.3)',borderRadius:3,padding:'5px 11px',cursor:'pointer' }}>Schedule Email</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div style={{ overflowX:'auto',padding:'24px 40px 0',flexShrink:0,minHeight:220 }}>
+        <div style={{ display:'flex',gap:14,alignItems:'flex-start',minWidth:'max-content',paddingBottom:32 }}>
+          {stages.map(stage => (
+            <div key={stage} style={{ width:212,flexShrink:0 }}>
+              <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14,paddingBottom:10,borderBottom:'1px solid var(--color-border)' }}>
+                <span style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--color-text-secondary)' }}>{stage}</span>
+                <span style={{ fontFamily:'var(--font-body)',fontSize:11,fontWeight:500,color:'var(--color-text-tertiary)',background:'var(--color-cream-warm)',border:'1px solid var(--color-border)',borderRadius:20,padding:'1px 7px' }}>{byStage(stage).length}</span>
+              </div>
+              <div style={{ display:'flex',flexDirection:'column',gap:10 }}>
+                {byStage(stage).length === 0
+                  ? <div style={{ fontFamily:'var(--font-body)',fontSize:13,color:'var(--color-text-tertiary)',textAlign:'center',padding:'24px 0',opacity:.4 }}>—</div>
+                  : byStage(stage).map(lead => (
+                    <LeadCard key={lead.id} lead={lead}
+                      onEmail={() => setEmailSlide({ lead, tpl: emailTemplates[stage] || emailTemplates.Intake })}
+                      onJourney={() => setJourneySlide(lead)} />
+                  ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── TEAM ACTIONS + AUTOMATIONS ── */}
+      <div style={{ padding:'24px 40px 8px',borderTop:'1px solid var(--color-border-subtle)',marginTop:8,flexShrink:0 }}>
+        <div style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,letterSpacing:'0.12em',textTransform:'uppercase',color:'var(--color-text-tertiary)' }}>Team Actions &amp; Automations</div>
+      </div>
+
+      {/* Team Actions — full width */}
+      <div style={{ padding:'0 40px',marginBottom:16,flexShrink:0 }}>
+        <div style={{ background:'var(--color-white)',border:'1px solid var(--color-border)',borderRadius:4,overflow:'hidden' }}>
+          <div style={{ padding:'18px 22px 14px',borderBottom:'1px solid var(--color-border-subtle)',display:'flex',alignItems:'center',justifyContent:'space-between' }}>
+            <div style={{ display:'flex',alignItems:'center',gap:8 }}>
+              <div style={{ width:22,height:22,borderRadius:'50%',background:'rgba(44,24,16,0.06)',border:'1px solid rgba(44,24,16,0.12)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0 }}>
+                <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="5.5" cy="3.5" r="2" stroke="var(--color-brown-deep)" strokeWidth="1.2"/><path d="M1.5 9.5c0-2.21 1.79-4 4-4s4 1.79 4 4" stroke="var(--color-brown-deep)" strokeWidth="1.2" strokeLinecap="round"/></svg>
+              </div>
+              <div>
+                <div style={{ fontFamily:'var(--font-body)',fontSize:11,fontWeight:600,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--color-text-primary)' }}>Team Actions</div>
+                <div style={{ fontFamily:'var(--font-body)',fontSize:10.5,color:'var(--color-text-tertiary)',marginTop:1 }}>Human review required</div>
+              </div>
+            </div>
+            {(todayActions.length + weekActions.length) > 0 && (
+              <span style={{ fontFamily:'var(--font-body)',fontSize:11,fontWeight:600,color:'var(--color-white)',background:'var(--color-brown-deep)',borderRadius:20,padding:'2px 9px',letterSpacing:'0.02em' }}>
+                {todayActions.length + weekActions.length} open
+              </span>
+            )}
+          </div>
+          <div style={{ padding:'14px 22px 18px' }}>
+            {todayActions.length > 0 && (
+              <>
+                <div style={{ fontFamily:'var(--font-body)',fontSize:9,fontWeight:600,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--color-gold)',marginBottom:10 }}>Do today</div>
+                {todayActions.map(action => {
+                  const vc = verbColors[action.verb] || verbColors['Review'];
+                  return (
+                    <div key={action.id} style={{ display:'flex',alignItems:'flex-start',gap:10,padding:'9px 0',borderBottom:'1px solid var(--color-border-subtle)' }}>
+                      <span style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,letterSpacing:'0.05em',padding:'2px 7px',borderRadius:3,border:`1px solid ${vc.border}`,background:vc.bg,color:vc.color,whiteSpace:'nowrap',flexShrink:0,marginTop:1 }}>{action.verb}</span>
+                      <div style={{ flex:1,minWidth:0 }}>
+                        <div style={{ fontFamily:'var(--font-body)',fontSize:12.5,fontWeight:400,color:'var(--color-text-primary)',lineHeight:1.4,marginBottom:4 }}>{action.task}</div>
+                        <div style={{ display:'flex',gap:6 }}>
+                          <span style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:500,color:'var(--color-text-tertiary)',background:'var(--color-cream)',border:'1px solid var(--color-border-subtle)',borderRadius:20,padding:'1px 7px' }}>{action.lead}</span>
+                          <span style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:500,color:'var(--color-text-tertiary)',background:'var(--color-cream)',border:'1px solid var(--color-border-subtle)',borderRadius:20,padding:'1px 7px' }}>{action.stage}</span>
+                        </div>
+                      </div>
+                      <button onClick={() => setDoneActions(d => [...d, action.id])} style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:500,color:'var(--color-brown-deep)',background:'var(--color-cream-warm)',border:'1px solid var(--color-border)',borderRadius:3,padding:'4px 9px',cursor:'pointer',flexShrink:0,marginTop:1 }}>Done</button>
+                    </div>
+                  );
+                })}
+              </>
+            )}
+            {weekActions.length > 0 && (
+              <>
+                <div style={{ fontFamily:'var(--font-body)',fontSize:9,fontWeight:600,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--color-text-tertiary)',marginTop:todayActions.length>0?14:0,marginBottom:10 }}>This week</div>
+                {weekActions.map(action => {
+                  const vc = verbColors[action.verb] || verbColors['Review'];
+                  return (
+                    <div key={action.id} style={{ display:'flex',alignItems:'flex-start',gap:10,padding:'9px 0',borderBottom:'1px solid var(--color-border-subtle)' }}>
+                      <span style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,letterSpacing:'0.05em',padding:'2px 7px',borderRadius:3,border:`1px solid ${vc.border}`,background:vc.bg,color:vc.color,whiteSpace:'nowrap',flexShrink:0,marginTop:1 }}>{action.verb}</span>
+                      <div style={{ flex:1,minWidth:0 }}>
+                        <div style={{ fontFamily:'var(--font-body)',fontSize:12.5,fontWeight:400,color:'var(--color-text-primary)',lineHeight:1.4,marginBottom:4 }}>{action.task}</div>
+                        <div style={{ display:'flex',gap:6 }}>
+                          <span style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:500,color:'var(--color-text-tertiary)',background:'var(--color-cream)',border:'1px solid var(--color-border-subtle)',borderRadius:20,padding:'1px 7px' }}>{action.lead}</span>
+                          <span style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:500,color:'var(--color-text-tertiary)',background:'var(--color-cream)',border:'1px solid var(--color-border-subtle)',borderRadius:20,padding:'1px 7px' }}>{action.stage}</span>
+                        </div>
+                      </div>
+                      <button onClick={() => setDoneActions(d => [...d, action.id])} style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:500,color:'var(--color-brown-deep)',background:'var(--color-cream-warm)',border:'1px solid var(--color-border)',borderRadius:3,padding:'4px 9px',cursor:'pointer',flexShrink:0,marginTop:1 }}>Done</button>
+                    </div>
+                  );
+                })}
+              </>
+            )}
+            {todayActions.length === 0 && weekActions.length === 0 && (
+              <div style={{ display:'flex',alignItems:'center',gap:10,padding:'18px 0' }}>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" fill="rgba(139,158,137,0.15)" stroke="var(--color-sage)" strokeWidth="1.2"/><path d="M4 7l2 2 4-4" stroke="var(--color-sage)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                <span style={{ fontFamily:'var(--font-body)',fontSize:13,fontWeight:300,color:'var(--color-text-tertiary)',fontStyle:'italic' }}>All clear — no actions needed right now.</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Automations — full width */}
+      <div style={{ padding:'0 40px',marginBottom:40,flexShrink:0 }}>
+        <div style={{ background:'var(--color-white)',border:'1px solid var(--color-border)',borderRadius:4,overflow:'hidden' }}>
+          <div style={{ padding:'18px 22px 14px',borderBottom:'1px solid var(--color-border-subtle)',display:'flex',alignItems:'center',justifyContent:'space-between' }}>
+            <div style={{ display:'flex',alignItems:'center',gap:8 }}>
+              <div style={{ width:22,height:22,borderRadius:'50%',background:'rgba(139,158,137,0.1)',border:'1px solid rgba(139,158,137,0.25)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0 }}>
+                <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1v2M5.5 8v2M1 5.5h2M8 5.5h2M2.5 2.5l1.4 1.4M7.1 7.1l1.4 1.4M2.5 8.5l1.4-1.4M7.1 3.9l1.4-1.4" stroke="var(--color-sage)" strokeWidth="1.2" strokeLinecap="round"/></svg>
+              </div>
+              <div>
+                <div style={{ fontFamily:'var(--font-body)',fontSize:11,fontWeight:600,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--color-text-primary)' }}>Automations</div>
+                <div style={{ fontFamily:'var(--font-body)',fontSize:10.5,color:'var(--color-text-tertiary)',marginTop:1 }}>Integrations &amp; placeholders</div>
+              </div>
+            </div>
+            <div style={{ display:'flex',gap:10,alignItems:'center' }}>
+              <span style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:500,color:'#5a7a58',background:'rgba(139,158,137,0.12)',border:'1px solid rgba(139,158,137,0.25)',borderRadius:20,padding:'2px 8px' }}>{automations.filter(a=>a.status==='active').length} active</span>
+              <span style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:500,color:'#9a7a2c',background:'rgba(201,168,76,0.1)',border:'1px solid rgba(201,168,76,0.25)',borderRadius:20,padding:'2px 8px' }}>{automations.filter(a=>a.status!=='active').length} pending</span>
+            </div>
+          </div>
+
+          {/* legend */}
+          <div style={{ padding:'10px 22px',borderBottom:'1px solid var(--color-border-subtle)',background:'var(--color-cream)',display:'flex',gap:18 }}>
+            <div style={{ display:'flex',alignItems:'center',gap:5 }}>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="rgba(44,24,16,0.35)" strokeWidth="1.2"/><path d="M4 6a2 2 0 1 1 4 0M6 8V6" stroke="rgba(44,24,16,0.55)" strokeWidth="1.2" strokeLinecap="round"/></svg>
+              <span style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:400,color:'var(--color-text-tertiary)' }}>Human triggers</span>
+            </div>
+            <div style={{ display:'flex',alignItems:'center',gap:5 }}>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="1.5" y="2.5" width="9" height="7" rx="1" stroke="var(--color-sage)" strokeWidth="1.2"/><path d="M4 2.5V1.5M8 2.5V1.5M1.5 5.5h9" stroke="var(--color-sage)" strokeWidth="1.2" strokeLinecap="round"/></svg>
+              <span style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:400,color:'var(--color-text-tertiary)' }}>Fires automatically</span>
+            </div>
+          </div>
+
+          <div style={{ padding:'16px 22px 20px',display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12 }}>
+            {automations.map((auto, i) => {
+              const sc = statusColors[auto.status];
+              const isHuman = auto.triggeredBy === 'human';
+              return (
+                <div key={i} style={{ display:'flex',alignItems:'flex-start',gap:12,padding:'12px 14px',border:'1px solid var(--color-border-subtle)',borderRadius:4,background:'var(--color-cream)' }}>
+                  <div style={{ width:30,height:30,borderRadius:4,background:auto.status==='active'?'rgba(44,24,16,0.05)':'rgba(160,149,139,0.08)',border:'1px solid var(--color-border)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0 }}>
+                    <span style={{ fontFamily:'var(--font-body)',fontSize:8,fontWeight:700,letterSpacing:'0.03em',color:auto.status==='active'?'var(--color-brown-mid)':'var(--color-text-tertiary)' }}>{auto.icon}</span>
+                  </div>
+                  <div style={{ flex:1,minWidth:0 }}>
+                    <div style={{ display:'flex',alignItems:'center',gap:7,marginBottom:3,flexWrap:'wrap' }}>
+                      <span style={{ fontFamily:'var(--font-body)',fontSize:12.5,fontWeight:500,color:auto.status==='active'?'var(--color-text-primary)':'var(--color-text-tertiary)' }}>{auto.name}</span>
+                      <span style={{ fontFamily:'var(--font-body)',fontSize:9.5,fontWeight:500,padding:'1px 6px',borderRadius:20,border:`1px solid ${sc.border}`,background:sc.bg,color:sc.color }}>{sc.label}</span>
+                    </div>
+                    <div style={{ fontFamily:'var(--font-body)',fontSize:11.5,fontWeight:300,color:'var(--color-text-secondary)',lineHeight:1.5,marginBottom:5 }}>{auto.description}</div>
+                    <div style={{ display:'flex',gap:6,alignItems:'center',flexWrap:'wrap' }}>
+                      <span style={{ fontFamily:'var(--font-body)',fontSize:9.5,fontWeight:500,color:'var(--color-text-tertiary)',background:'var(--color-white)',border:'1px solid var(--color-border-subtle)',borderRadius:20,padding:'1px 7px' }}>{auto.stage}</span>
+                      <div style={{ display:'flex',alignItems:'center',gap:4 }}>
+                        {isHuman
+                          ? <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><circle cx="4.5" cy="3" r="1.5" stroke="rgba(44,24,16,0.4)" strokeWidth="1"/><path d="M1 8c0-1.66 1.57-3 3.5-3S8 6.34 8 8" stroke="rgba(44,24,16,0.4)" strokeWidth="1" strokeLinecap="round"/></svg>
+                          : <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M4.5 1v1.5M4.5 6.5V8M1 4.5h1.5M6.5 4.5H8M2.1 2.1l1 1M5.9 5.9l1 1M2.1 6.9l1-1M5.9 3.1l1-1" stroke="var(--color-sage)" strokeWidth="1" strokeLinecap="round"/></svg>}
+                        <span style={{ fontFamily:'var(--font-body)',fontSize:9.5,color:'var(--color-text-tertiary)' }}>{isHuman ? 'Human triggers' : 'Auto-fires'}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <SlideOver open={!!emailSlide} onClose={() => setEmailSlide(null)} title={emailSlide?.lead?.company} subtitle={`${emailSlide?.lead?.stage} Email`} width="540px">
+        {emailSlide && <EmailPanel tpl={emailSlide.tpl} lead={emailSlide.lead} />}
+      </SlideOver>
+      <SlideOver open={!!journeySlide} onClose={() => setJourneySlide(null)} title={journeySlide?.company} subtitle="Client Journey" width="580px">
+        {journeySlide && <JourneyPanel lead={journeySlide} />}
+      </SlideOver>
+    </div>
+  );
+}
+
+function LeadCard({ lead, onEmail, onJourney }) {
+  return (
+    <div style={{ background: lead.status==='Lost' ? 'var(--color-cream)' : 'var(--color-white)', border:'1px solid var(--color-border)',borderRadius:4,padding:'14px 15px',opacity:lead.status==='Lost'?.6:1 }}>
+      <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:3 }}>
+        <span style={{ fontFamily:'var(--font-body)',fontSize:13,fontWeight:600,color:'var(--color-text-primary)' }}>{lead.company}</span>
+        {lead.status==='Won' && <span style={{ width:7,height:7,borderRadius:'50%',background:'var(--color-sage)',display:'inline-block' }} />}
+      </div>
+      <div style={{ fontFamily:'var(--font-body)',fontSize:11.5,color:'var(--color-text-secondary)',marginBottom:8 }}>{lead.contact}</div>
+      <div style={{ display:'flex',justifyContent:'space-between',marginBottom:12 }}>
+        <span style={{ fontFamily:'var(--font-body)',fontSize:10.5,color:'var(--color-text-tertiary)',background:'var(--color-cream)',border:'1px solid var(--color-border-subtle)',borderRadius:20,padding:'2px 7px' }}>{lead.source}</span>
+        <span style={{ fontFamily:'var(--font-body)',fontSize:10.5,fontWeight:500,color:'var(--color-text-tertiary)' }}>Day {lead.days}</span>
+      </div>
+      <div style={{ display:'flex',gap:6 }}>
+        <button onClick={onEmail} style={{ flex:1,fontFamily:'var(--font-body)',fontSize:10.5,fontWeight:500,color:'var(--color-brown-deep)',background:'var(--color-cream-warm)',border:'1px solid var(--color-border)',borderRadius:3,padding:'5px 6px',cursor:'pointer',textAlign:'center' }}>Approve Email</button>
+        <button onClick={onJourney} style={{ flex:1,fontFamily:'var(--font-body)',fontSize:10.5,fontWeight:400,color:'var(--color-text-secondary)',background:'transparent',border:'1px solid var(--color-border)',borderRadius:3,padding:'5px 6px',cursor:'pointer',textAlign:'center' }}>View Journey</button>
+      </div>
+    </div>
+  );
+}
+
+function EmailPanel({ tpl, lead }) {
+  const [approved, setApproved] = React.useState(false);
+  if (!tpl) return <p style={{ fontFamily:'var(--font-body)',fontSize:14,color:'var(--color-text-tertiary)',fontStyle:'italic' }}>No template available for this stage.</p>;
+  return (
+    <div>
+      <div style={{ background:'var(--color-cream)',border:'1px solid var(--color-border-subtle)',borderRadius:4,padding:'14px 16px',marginBottom:20,display:'flex',flexDirection:'column',gap:8 }}>
+        {[['To', `${lead.contact} · ${lead.company}`],['Stage', lead.stage],['Subject', tpl.subject]].map(([lbl,val]) => (
+          <div key={lbl} style={{ display:'flex',gap:12 }}>
+            <span style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--color-text-tertiary)',width:52,flexShrink:0,paddingTop:1 }}>{lbl}</span>
+            <span style={{ fontFamily:'var(--font-body)',fontSize:13,color:'var(--color-text-primary)' }}>{val}</span>
+          </div>
+        ))}
+      </div>
+      <div style={{ marginBottom:24,padding:'18px 0',borderTop:'1px solid var(--color-border-subtle)',borderBottom:'1px solid var(--color-border-subtle)',display:'flex',flexDirection:'column',gap:14 }}>
+        {tpl.body.split('\n\n').map((p,i) => <p key={i} style={{ fontFamily:'var(--font-body)',fontSize:14,fontWeight:300,color:'var(--color-text-primary)',lineHeight:1.7 }}>{p}</p>)}
+      </div>
+      <div style={{ display:'flex',gap:10,alignItems:'center' }}>
+        {approved
+          ? <div style={{ display:'flex',alignItems:'center',gap:8,fontFamily:'var(--font-body)',fontSize:13,fontWeight:500,color:'var(--color-sage)' }}>
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" fill="var(--color-sage)"/><path d="M4 7l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              Email approved and queued
+            </div>
+          : <button onClick={() => setApproved(true)} style={{ fontFamily:'var(--font-body)',fontSize:13,fontWeight:500,color:'var(--color-white)',background:'var(--color-brown-deep)',border:'none',borderRadius:3,padding:'10px 20px',cursor:'pointer' }}>Approve &amp; Queue Email</button>
+        }
+        <button style={{ fontFamily:'var(--font-body)',fontSize:13,fontWeight:400,color:'var(--color-text-secondary)',background:'var(--color-cream)',border:'1px solid var(--color-border)',borderRadius:3,padding:'10px 16px',cursor:'pointer' }}>Edit Draft</button>
+      </div>
+    </div>
+  );
+}
+
+function JourneyPanel({ lead }) {
+  const items = getCheckedItems(lead);
+  const grouped = journeyStages.reduce((a,s) => { a[s]=items.filter(i=>i.stage===s); return a; }, {});
+  return (
+    <div>
+      {journeyStages.map((stage, si) => (
+        <div key={stage} style={{ marginBottom:26 }}>
+          <div style={{ display:'flex',alignItems:'center',gap:10,marginBottom:12,paddingBottom:8,borderBottom:'1px solid var(--color-border-subtle)' }}>
+            <span style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,color:'var(--color-white)',background:'var(--color-brown-mid)',width:18,height:18,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0 }}>{si+1}</span>
+            <span style={{ fontFamily:'var(--font-body)',fontSize:11,fontWeight:600,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--color-text-secondary)' }}>{stage}</span>
+          </div>
+          {grouped[stage]?.map(item => (
+            <div key={item.id} style={{ display:'flex',alignItems:'flex-start',gap:10,padding:'6px 0' }}>
+              <span style={{ flexShrink:0,marginTop:1 }}>
+                {item.checked
+                  ? <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5.25" fill="rgba(139,158,137,0.15)" stroke="var(--color-sage)" strokeWidth="1.25"/><path d="M3.5 6l2 2 3-3.5" stroke="var(--color-sage)" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  : <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5.25" stroke="var(--color-border)" strokeWidth="1.25"/></svg>}
+              </span>
+              <span style={{ fontFamily:'var(--font-body)',fontSize:13,fontWeight:400,color:item.checked?'var(--color-text-tertiary)':'var(--color-text-primary)',textDecoration:item.checked?'line-through':'none',textDecorationColor:'var(--color-sage-light)',lineHeight:1.5,flex:1 }}>{item.item}</span>
+              {item.docusign && item.dsStatus && (
+                <span style={{ display:'inline-flex',alignItems:'center',flexShrink:0,fontFamily:'var(--font-body)',fontSize:10,fontWeight:500,padding:'2px 8px',borderRadius:20,border:'1px solid',whiteSpace:'nowrap',color:item.dsStatus==='Signed'?'#5a7a58':'#9a7a2c',background:item.dsStatus==='Signed'?'rgba(139,158,137,0.12)':'rgba(201,168,76,0.1)',borderColor:item.dsStatus==='Signed'?'rgba(139,158,137,0.3)':'rgba(201,168,76,0.25)' }}>
+                  <svg width="9" height="9" viewBox="0 0 10 10" fill="none" style={{ marginRight:4 }}><rect x="1" y="1" width="8" height="8" rx="1" stroke="currentColor" strokeWidth="1.2"/><path d="M3 5l1.5 1.5L7 3.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  DocuSign · {item.dsStatus}
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+
+/* ── PAGE: KNOWLEDGE BASE ────────────────────────────────── */
+
+const kbSections = [...new Set(knowledgeBase.questions.map(q => q.section))];
+
+function KnowledgeBasePage() {
+  const [selected, setSelected] = React.useState(knowledgeBase.questions.find(q => q.answered)?.id || null);
+  const selQ = knowledgeBase.questions.find(q => q.id === selected);
+  return (
+    <div className="page-enter" style={{ flex:1,display:'flex',flexDirection:'column',background:'var(--color-cream)',minHeight:'100vh',overflow:'hidden' }}>
+      <PageHeader section="Intake" title="Knowledge Base" />
+
+      <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',gap:16,margin:'22px 40px 0',background:'rgba(139,158,137,0.08)',border:'1px solid rgba(139,158,137,0.2)',borderRadius:4,padding:'14px 18px',flexShrink:0 }}>
+        <div style={{ display:'flex',alignItems:'flex-start',gap:12 }}>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ marginTop:2,flexShrink:0 }}><rect x="1.5" y="1.5" width="11" height="11" rx="1.5" stroke="var(--color-sage)" strokeWidth="1.3"/><path d="M4 5h6M4 7.5h4" stroke="var(--color-sage)" strokeWidth="1.3" strokeLinecap="round"/></svg>
+          <div>
+            <div style={{ fontFamily:'var(--font-body)',fontSize:13,fontWeight:500,color:'var(--color-text-primary)',marginBottom:3 }}>Otter.ai transcript uploaded — {knowledgeBase.transcript.name}, {knowledgeBase.transcript.date}</div>
+            <div style={{ fontFamily:'var(--font-body)',fontSize:12,fontWeight:300,color:'var(--color-text-secondary)' }}><span style={{ fontWeight:500,color:'var(--color-sage)' }}>{knowledgeBase.answered} of {knowledgeBase.total}</span> priority questions addressed</div>
+          </div>
+        </div>
+        <button style={{ display:'flex',alignItems:'center',fontFamily:'var(--font-body)',fontSize:12,fontWeight:500,color:'var(--color-brown-deep)',background:'var(--color-white)',border:'1px solid var(--color-border)',borderRadius:3,padding:'8px 14px',cursor:'pointer',flexShrink:0,whiteSpace:'nowrap' }}>
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none" style={{ marginRight:6 }}><path d="M5.5 7.5V2M3 4.5l2.5-2.5 2.5 2.5M2 9.5h7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          Upload New Transcript
+        </button>
+      </div>
+
+      <div style={{ flex:1,display:'flex',margin:'18px 40px 36px',border:'1px solid var(--color-border)',borderRadius:4,background:'var(--color-white)',overflow:'hidden' }}>
+        <div style={{ width:360,flexShrink:0,borderRight:'1px solid var(--color-border-subtle)',overflowY:'auto' }}>
+          <div style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--color-text-tertiary)',padding:'18px 20px 12px',borderBottom:'1px solid var(--color-border-subtle)',position:'sticky',top:0,background:'var(--color-white)',zIndex:1 }}>Strategic Planning Questions</div>
+          {kbSections.map(sec => (
+            <div key={sec} style={{ padding:'14px 0 4px' }}>
+              <div style={{ fontFamily:'var(--font-body)',fontSize:9.5,fontWeight:600,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--color-text-tertiary)',padding:'0 20px 8px',opacity:.7 }}>{sec}</div>
+              {knowledgeBase.questions.filter(q => q.section === sec).map(q => (
+                <button key={q.id} onClick={() => setSelected(q.id)} style={{ display:'flex',alignItems:'flex-start',gap:10,width:'100%',padding:'10px 20px',textAlign:'left',background:selected===q.id?'var(--color-cream)':'none',border:'none',borderLeft:selected===q.id?'2px solid var(--color-gold)':'2px solid transparent',cursor:'pointer',transition:'background 150ms ease' }}>
+                  <span style={{ flexShrink:0,marginTop:2 }}>
+                    {q.answered
+                      ? <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4.25" fill="rgba(139,158,137,0.18)" stroke="var(--color-sage)" strokeWidth="1.1"/><path d="M3 5l1.5 1.5L7 3.5" stroke="var(--color-sage)" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      : <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4.25" stroke="var(--color-border)" strokeWidth="1.1"/></svg>}
+                  </span>
+                  <span style={{ fontFamily:'var(--font-body)',fontSize:12.5,fontWeight:400,color:'var(--color-text-primary)',lineHeight:1.5 }}>{q.q}</span>
+                </button>
+              ))}
+            </div>
+          ))}
+        </div>
+        <div style={{ flex:1,overflowY:'auto',padding:32 }}>
+          {selQ ? <AnswerView q={selQ} /> : (
+            <div style={{ display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:'100%',gap:12,opacity:.5 }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke="var(--color-border)" strokeWidth="1.5"/><path d="M8 9h8M8 12h5" stroke="var(--color-border)" strokeWidth="1.5" strokeLinecap="round"/></svg>
+              <p style={{ fontFamily:'var(--font-body)',fontSize:13,color:'var(--color-text-tertiary)',fontStyle:'italic' }}>Select a question to view extracted insights</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AnswerView({ q }) {
+  return (
+    <div>
+      <div style={{ marginBottom:24 }}>
+        <div style={{ fontFamily:'var(--font-body)',fontSize:9.5,fontWeight:600,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--color-text-tertiary)',marginBottom:8 }}>{q.section}</div>
+        <h2 style={{ fontFamily:'var(--font-display)',fontSize:20,fontWeight:400,color:'var(--color-text-primary)',lineHeight:1.35 }}>{q.q}</h2>
+      </div>
+      {q.answered ? (
+        <div style={{ background:'var(--color-cream)',border:'1px solid var(--color-border-subtle)',borderRadius:4,padding:'20px 22px' }}>
+          <div style={{ display:'flex',alignItems:'center',gap:8,marginBottom:14 }}>
+            <span style={{ display:'inline-flex',alignItems:'center',fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,letterSpacing:'0.06em',textTransform:'uppercase',color:'var(--color-sage)' }}>
+              <svg width="9" height="9" viewBox="0 0 9 9" fill="none" style={{ marginRight:4 }}><circle cx="4.5" cy="4.5" r="3.75" fill="rgba(139,158,137,0.2)" stroke="var(--color-sage)" strokeWidth="1"/><path d="M2.5 4.5l1.5 1.5L6.5 3" stroke="var(--color-sage)" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              Extracted from transcript
+            </span>
+            <span style={{ fontFamily:'var(--font-body)',fontSize:11,fontWeight:300,color:'var(--color-text-tertiary)',fontStyle:'italic' }}>— {knowledgeBase.transcript.name}, {knowledgeBase.transcript.date}</span>
+          </div>
+          <blockquote style={{ fontFamily:'var(--font-display)',fontSize:17,fontWeight:400,fontStyle:'italic',color:'var(--color-text-primary)',lineHeight:1.65,borderLeft:'3px solid var(--color-gold-muted)',paddingLeft:18,margin:'0 0 16px' }}>{q.excerpt}</blockquote>
+          <div style={{ display:'flex',gap:8 }}>
+            {['Add Note','Flag for Follow-up'].map(lbl => (
+              <button key={lbl} style={{ fontFamily:'var(--font-body)',fontSize:11.5,fontWeight:400,color:'var(--color-text-secondary)',background:'var(--color-white)',border:'1px solid var(--color-border)',borderRadius:3,padding:'6px 12px',cursor:'pointer' }}>{lbl}</button>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div style={{ background:'var(--color-cream)',border:'1px solid var(--color-border-subtle)',borderRadius:4,padding:'28px 24px' }}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ marginBottom:10 }}><circle cx="8" cy="8" r="6.5" stroke="var(--color-border)" strokeWidth="1.25"/><path d="M8 5v4M8 11v.5" stroke="var(--color-text-tertiary)" strokeWidth="1.25" strokeLinecap="round"/></svg>
+          <p style={{ fontFamily:'var(--font-body)',fontSize:14,fontWeight:400,color:'var(--color-text-secondary)',marginBottom:4 }}>Not addressed in transcript.</p>
+          <p style={{ fontFamily:'var(--font-body)',fontSize:13,fontWeight:300,color:'var(--color-text-tertiary)',fontStyle:'italic',marginBottom:16 }}>Consider asking in next session.</p>
+          <button style={{ fontFamily:'var(--font-body)',fontSize:12,fontWeight:500,color:'var(--color-brown-deep)',background:'var(--color-white)',border:'1px solid var(--color-border)',borderRadius:3,padding:'7px 14px',cursor:'pointer' }}>Add to Next Agenda</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+/* ── PAGE: OPERATIONS ALL ────────────────────────────────── */
+
+function statusTagClass(s) {
+  const m = { 'On Track':'st-on-track','Needs Attention':'st-needs-attention','Blocked':'st-blocked','In Review':'st-in-review','In review':'st-in-review' };
+  return 'status-tag ' + (m[s] || 'st-in-review');
+}
+
+function PrepAgendaPanel({ client }) {
+  const agenda = clientAgendas[client];
+  const [approvals, setApprovals] = React.useState({});
+  if (!agenda) return null;
+  return (
+    <div>
+      <div style={{ background:'var(--color-cream)',border:'1px solid var(--color-border-subtle)',borderRadius:4,padding:'14px 18px',marginBottom:24 }}>
+        {[['Meeting Type', agenda.meetingType],['Date', agenda.nextDate],['Attendees', agenda.attendees]].map(([lbl,val]) => (
+          <div key={lbl} style={{ display:'flex',gap:12,marginBottom:8 }}>
+            <span style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--color-text-tertiary)',width:100,flexShrink:0,paddingTop:2 }}>{lbl}</span>
+            <span style={{ fontFamily:'var(--font-body)',fontSize:13,color:'var(--color-text-primary)',lineHeight:1.5 }}>{val}</span>
+          </div>
+        ))}
+      </div>
+      {agenda.sections.map((section, si) => (
+        <div key={si} style={{ marginBottom:24 }}>
+          <div style={{ display:'flex',alignItems:'baseline',gap:10,marginBottom:10,paddingBottom:8,borderBottom:'1px solid var(--color-border-subtle)' }}>
+            <h3 style={{ fontFamily:'var(--font-display)',fontSize:17,fontWeight:500,color:'var(--color-text-primary)' }}>{section.title}</h3>
+            <span style={{ fontFamily:'var(--font-body)',fontSize:11,fontWeight:300,color:'var(--color-text-tertiary)',fontStyle:'italic',whiteSpace:'nowrap' }}>{section.owner} · {section.duration}</span>
+          </div>
+          {section.items.map((item, ii) => (
+            <div key={ii} style={{ display:'flex',alignItems:'flex-start',gap:8,padding:'5px 0' }}>
+              <span style={{ width:4,height:4,borderRadius:'50%',background:'var(--color-gold)',opacity:0.55,flexShrink:0,marginTop:7 }} />
+              <span style={{ fontFamily:'var(--font-body)',fontSize:13,fontWeight:300,color:'var(--color-text-primary)',lineHeight:1.55 }}>{item}</span>
+            </div>
+          ))}
+        </div>
+      ))}
+      {/* Agenda Approval / Circulation */}
+      <div style={{ marginBottom:20,borderTop:'1px solid var(--color-border-subtle)',paddingTop:18 }}>
+        <div style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--color-text-tertiary)',marginBottom:14 }}>Agenda Approval</div>
+        <div style={{ display:'flex',flexDirection:'column',gap:10 }}>
+          {['Lindsay','Megan','Alex','Carly'].map(name => {
+            const approved = !!approvals[name];
+            return (
+              <div key={name} style={{ display:'flex',alignItems:'center',justifyContent:'space-between',gap:12 }}>
+                <div style={{ display:'flex',alignItems:'center',gap:8 }}>
+                  <div style={{ width:24,height:24,borderRadius:'50%',background:'var(--color-brown-deep)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0 }}>
+                    <span style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,color:'var(--color-cream)',lineHeight:1 }}>{name[0]}</span>
+                  </div>
+                  <span style={{ fontFamily:'var(--font-body)',fontSize:13,fontWeight:400,color:'var(--color-text-primary)' }}>{name}</span>
+                </div>
+                {approved
+                  ? <div style={{ display:'flex',alignItems:'center',gap:6,fontFamily:'var(--font-body)',fontSize:12,fontWeight:500,color:'#5a7a58' }}>
+                      <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5.5" fill="rgba(139,158,137,0.15)" stroke="var(--color-sage)" strokeWidth="1.2"/><path d="M4 6.5l1.8 1.8L9 4.5" stroke="var(--color-sage)" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      Approved
+                    </div>
+                  : <button onClick={() => setApprovals(a => ({...a,[name]:true}))} style={{ fontFamily:'var(--font-body)',fontSize:11,fontWeight:400,color:'var(--color-text-secondary)',background:'none',border:'1px solid var(--color-border)',borderRadius:3,padding:'4px 12px',cursor:'pointer' }}>Approve</button>}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div style={{ borderTop:'1px solid var(--color-border-subtle)',paddingTop:18,display:'flex',gap:10 }}>
+        <button style={{ fontFamily:'var(--font-body)',fontSize:13,fontWeight:500,color:'var(--color-white)',background:'var(--color-brown-deep)',borderRadius:3,padding:'10px 20px',cursor:'pointer',border:'none' }}>Export as PDF</button>
+        <button style={{ fontFamily:'var(--font-body)',fontSize:13,fontWeight:400,color:'var(--color-text-secondary)',background:'var(--color-cream)',border:'1px solid var(--color-border)',borderRadius:3,padding:'10px 16px',cursor:'pointer' }}>Copy to Google Doc</button>
+      </div>
+    </div>
+  );
+}
+
+function OpsAllPage() {
+  const [flagDismissed, setFlagDismissed] = React.useState(false);
+  const [agendaClient, setAgendaClient] = React.useState(null);
+  const [taskClient, setTaskClient] = React.useState('My Neighbors');
+  const [doneTasks, setDoneTasks] = React.useState([]);
+  return (
+    <div className="page-enter" style={{ flex:1,overflowY:'auto',background:'var(--color-cream)',minHeight:'100vh' }}>
+      <PageHeader section="Operations" title="All Clients" />
+      <div style={{ padding:'26px 40px 60px' }}>
+        <div style={{ background:'var(--color-white)',border:'1px solid var(--color-border)',borderRadius:4,overflow:'hidden',marginBottom:22 }}>
+          <table style={{ width:'100%',borderCollapse:'collapse' }}>
+            <thead>
+              <tr style={{ background:'var(--color-cream)' }}>
+                {['Client','Current Workstream','Owner','Status','Due'].map((h,i) => (
+                  <th key={i} style={{ fontFamily:'var(--font-body)',fontSize:9.5,fontWeight:600,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--color-text-tertiary)',textAlign:'left',padding:'13px 16px',borderBottom:'1px solid var(--color-border-subtle)',whiteSpace:'nowrap' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {opsAll.map((row,i) => (
+                <tr key={row.id} style={{ borderBottom:'1px solid var(--color-border-subtle)',background:i%2===0?'rgba(248,244,238,0.4)':'transparent' }}>
+                  <td style={{ padding:'12px 16px' }}><span style={{ fontFamily:'var(--font-body)',fontSize:13,fontWeight:500,color:'var(--color-text-primary)',whiteSpace:'nowrap' }}>{row.client}</span></td>
+                  <td style={{ padding:'12px 16px' }}><span style={{ fontFamily:'var(--font-body)',fontSize:13,fontWeight:300,color:'var(--color-text-primary)' }}>{row.workstream}</span></td>
+                  <td style={{ padding:'12px 16px' }}><span style={{ fontFamily:'var(--font-body)',fontSize:12.5,color:'var(--color-text-secondary)',whiteSpace:'nowrap' }}>{row.owner}</span></td>
+                  <td style={{ padding:'12px 16px' }}><span className={statusTagClass(row.status)}>{row.status}</span></td>
+                  <td style={{ padding:'12px 16px' }}><span style={{ fontFamily:'var(--font-body)',fontSize:12,color:'var(--color-text-secondary)',whiteSpace:'nowrap' }}>{row.due}</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {!flagDismissed && (
+          <div style={{ background:'var(--color-white)',border:'1px solid var(--color-border)',borderLeft:'3px solid var(--color-gold)',borderRadius:2,padding:'18px 22px',marginBottom:28,display:'flex',alignItems:'flex-start',gap:16 }}>
+            <div style={{ flex:1 }}>
+              <div style={{ display:'flex',alignItems:'center',fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--color-gold)',marginBottom:10 }}>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ marginRight:6 }}><circle cx="6" cy="6" r="5" stroke="var(--color-gold)" strokeWidth="1.2"/><path d="M6 4v3M6 8.5v.4" stroke="var(--color-gold)" strokeWidth="1.2" strokeLinecap="round"/></svg>
+                Cross-client flag
+              </div>
+              <p style={{ fontFamily:'var(--font-body)',fontSize:13.5,fontWeight:300,color:'var(--color-text-secondary)',lineHeight:1.65,fontStyle:'italic' }}>
+                Megan is carrying three simultaneous campaign builds (My Neighbors, George Rings, Foxiecakes) with overlapping deadlines in the June 3–13 window. Consider sequencing or redistributing the George Rings brand refresh.
+              </p>
+            </div>
+            <button onClick={() => setFlagDismissed(true)} style={{ fontFamily:'var(--font-body)',fontSize:11,fontWeight:400,color:'var(--color-text-tertiary)',background:'var(--color-cream)',border:'1px solid var(--color-border)',borderRadius:3,padding:'5px 10px',cursor:'pointer',whiteSpace:'nowrap',flexShrink:0 }}>Dismiss</button>
+          </div>
+        )}
+
+        <div style={{ background:'var(--color-white)',border:'1px solid var(--color-border)',borderRadius:4,padding:'20px 24px',marginBottom:22 }}>
+          <div style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--color-text-tertiary)',marginBottom:16 }}>Upcoming Syncs</div>
+          {meetingCadence.map((m,i) => (
+            <div key={i} style={{ display:'flex',alignItems:'center',gap:16,padding:'11px 0',borderBottom:i<meetingCadence.length-1?'1px solid var(--color-border-subtle)':'none' }}>
+              <span style={{ fontFamily:'var(--font-body)',fontSize:13,fontWeight:500,color:'var(--color-text-primary)',width:140,flexShrink:0 }}>{m.client}</span>
+              <span style={{ fontFamily:'var(--font-body)',fontSize:12.5,fontWeight:300,color:'var(--color-text-secondary)',flex:1 }}>{m.type}</span>
+              <span style={{ fontFamily:'var(--font-body)',fontSize:12,color:'var(--color-text-tertiary)',whiteSpace:'nowrap' }}>{m.date}</span>
+              <button onClick={() => setAgendaClient(m.client)} style={{ fontFamily:'var(--font-body)',fontSize:11,fontWeight:500,color:'var(--color-brown-deep)',background:'rgba(201,168,76,0.1)',border:'1px solid rgba(201,168,76,0.3)',borderRadius:3,padding:'5px 10px',cursor:'pointer',whiteSpace:'nowrap',flexShrink:0 }}>Prep Agenda</button>
+            </div>
+          ))}
+        </div>
+
+        {/* Team Task Tracker */}
+        {(() => {
+          const filteredTasks = teamTasks.filter(t => t.client === taskClient);
+          const people = [...new Set(filteredTasks.map(t => t.person))];
+          return (
+            <div style={{ background:'var(--color-white)',border:'1px solid var(--color-border)',borderRadius:4,overflow:'hidden' }}>
+              <div style={{ padding:'18px 24px 14px',borderBottom:'1px solid var(--color-border-subtle)',display:'flex',alignItems:'center',justifyContent:'space-between' }}>
+                <div style={{ display:'flex',alignItems:'center',gap:8 }}>
+                  <div style={{ width:22,height:22,borderRadius:'50%',background:'rgba(44,24,16,0.05)',border:'1px solid rgba(44,24,16,0.1)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0 }}>
+                    <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="5.5" cy="3.5" r="2" stroke="var(--color-brown-deep)" strokeWidth="1.2"/><path d="M1.5 9.5c0-2.21 1.79-4 4-4s4 1.79 4 4" stroke="var(--color-brown-deep)" strokeWidth="1.2" strokeLinecap="round"/></svg>
+                  </div>
+                  <div>
+                    <div style={{ fontFamily:'var(--font-body)',fontSize:11,fontWeight:600,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--color-text-primary)' }}>Team Task Tracker</div>
+                    <div style={{ fontFamily:'var(--font-body)',fontSize:10.5,color:'var(--color-text-tertiary)',marginTop:1 }}>Tasks by person for selected client</div>
+                  </div>
+                </div>
+                <select value={taskClient} onChange={e => setTaskClient(e.target.value)} style={{ background:'var(--color-cream)',border:'1px solid var(--color-border)',borderRadius:4,color:'var(--color-text-primary)',fontFamily:'var(--font-body)',fontSize:12,padding:'5px 28px 5px 8px',cursor:'pointer',appearance:'none',backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%232C1810' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`,backgroundRepeat:'no-repeat',backgroundPosition:'right 8px center' }}>
+                  {CLIENTS.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div style={{ padding:'4px 24px 24px' }}>
+                {people.map((person, pi) => {
+                  const personTasks = filteredTasks.filter(t => t.person === person);
+                  const personRole = personTasks[0]?.role;
+                  return (
+                    <div key={person} style={{ marginTop:20 }}>
+                      <div style={{ display:'flex',alignItems:'center',gap:8,marginBottom:10 }}>
+                        <div style={{ width:26,height:26,borderRadius:'50%',background:'var(--color-brown-deep)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0 }}>
+                          <span style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,color:'var(--color-cream)',lineHeight:1 }}>{person[0]}</span>
+                        </div>
+                        <span style={{ fontFamily:'var(--font-body)',fontSize:13,fontWeight:500,color:'var(--color-text-primary)' }}>{person}</span>
+                        <span style={{ fontFamily:'var(--font-body)',fontSize:11,fontWeight:300,color:'var(--color-text-tertiary)' }}>{personRole}</span>
+                      </div>
+                      {personTasks.map((task) => {
+                        const isDone = doneTasks.includes(task.id);
+                        return (
+                          <div key={task.id} style={{ display:'flex',alignItems:'flex-start',gap:10,padding:'8px 0',borderBottom:'1px solid var(--color-border-subtle)',paddingLeft:34 }}>
+                            <button onClick={() => setDoneTasks(d => isDone ? d.filter(x=>x!==task.id) : [...d,task.id])} style={{ flexShrink:0,marginTop:2,background:'none',border:'none',padding:0,cursor:'pointer' }}>
+                              {isDone
+                                ? <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" fill="rgba(139,158,137,0.15)" stroke="var(--color-sage)" strokeWidth="1.2"/><path d="M4 7l2 2 4-4" stroke="var(--color-sage)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                : <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="var(--color-border)" strokeWidth="1.2"/></svg>}
+                            </button>
+                            <div style={{ flex:1,minWidth:0 }}>
+                              <div style={{ fontFamily:'var(--font-body)',fontSize:13,fontWeight:400,color:isDone?'var(--color-text-tertiary)':'var(--color-text-primary)',textDecoration:isDone?'line-through':'none',textDecorationColor:'var(--color-sage-light)',lineHeight:1.4 }}>{task.task}</div>
+                              {task.agendaTask && !isDone && (
+                                <div style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:500,color:'var(--color-gold)',marginTop:3,display:'flex',alignItems:'center',gap:4 }}>
+                                  📋 Agenda prep task
+                                </div>
+                              )}
+                            </div>
+                            <span style={{ fontFamily:'var(--font-body)',fontSize:11,color:'var(--color-text-tertiary)',whiteSpace:'nowrap',flexShrink:0,marginTop:1 }}>Due {task.due}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+                {filteredTasks.length === 0 && (
+                  <div style={{ fontFamily:'var(--font-body)',fontSize:13,color:'var(--color-text-tertiary)',fontStyle:'italic',padding:'20px 0',textAlign:'center' }}>No tasks for this client.</div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+      </div>
+
+      <SlideOver open={!!agendaClient} onClose={() => setAgendaClient(null)} title={agendaClient ? `${agendaClient} — ${clientAgendas[agendaClient]?.meetingType}` : ''} subtitle="Agenda" width="560px">
+        {agendaClient && <PrepAgendaPanel client={agendaClient} />}
+      </SlideOver>
+    </div>
+  );
+}
+
+
+/* ── PAGE: OPERATIONS CLIENT ─────────────────────────────── */
+
+function OpsClientPage({ activeClient }) {
+  const data = opsClient[activeClient] || opsClient['My Neighbors'];
+
+  return (
+    <div className="page-enter" style={{ flex:1,overflowY:'auto',background:'var(--color-cream)',minHeight:'100vh' }}>
+      <PageHeader section="Operations" title="Your Work With evgn" />
+      <div style={{ padding:'8px 40px 0 40px' }}>
+        <div style={{ fontFamily:'var(--font-body)',fontSize:12,fontWeight:300,color:'var(--color-text-tertiary)',fontStyle:'italic',paddingBottom:24 }}>{data.sprint}</div>
+      </div>
+      <div style={{ padding:'0 40px 60px',maxWidth:800 }}>
+        <div style={{ fontFamily:'var(--font-display)',fontSize:24,fontWeight:300,color:'var(--color-text-secondary)',fontStyle:'italic',marginBottom:24,paddingBottom:20,borderBottom:'1px solid var(--color-border-subtle)' }}>{activeClient}</div>
+
+        {/* Workstream cards */}
+        <div style={{ display:'flex',flexDirection:'column',gap:16,marginBottom:32 }}>
+          {data.workstreams.map((ws,i) => (
+            <div key={i} style={{ background:'var(--color-white)',border:'1px solid var(--color-border)',borderRadius:4,padding:'22px 24px' }}>
+              <div style={{ display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:16,marginBottom:12 }}>
+                <div>
+                  <h3 style={{ fontFamily:'var(--font-display)',fontSize:20,fontWeight:400,color:'var(--color-text-primary)',marginBottom:3 }}>{ws.name}</h3>
+                  <div style={{ fontFamily:'var(--font-body)',fontSize:11.5,color:'var(--color-text-tertiary)' }}>{ws.owner}</div>
+                </div>
+                <div style={{ display:'flex',flexDirection:'column',alignItems:'flex-end',gap:6,flexShrink:0 }}>
+                  <span className={statusTagClass(ws.status)}>{ws.status}</span>
+                  <span style={{ fontFamily:'var(--font-body)',fontSize:11,color:'var(--color-text-tertiary)' }}>Due {ws.due}</span>
+                </div>
+              </div>
+              <p style={{ fontFamily:'var(--font-body)',fontSize:14,fontWeight:300,color:'var(--color-text-secondary)',lineHeight:1.65,marginBottom:16,fontStyle:'italic' }}>{ws.update}</p>
+              <div style={{ height:2,background:'var(--color-border)',borderRadius:1,overflow:'hidden' }}>
+                <div style={{ height:'100%',width:`${ws.progress*100}%`,background:'var(--color-gold)',borderRadius:1 }} />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Client action items */}
+        <div style={{ background:'var(--color-white)',border:'1px solid var(--color-border)',borderLeft:'3px solid var(--color-gold)',borderRadius:2,padding:'22px 24px',marginBottom:28 }}>
+          <div style={{ display:'flex',alignItems:'center',fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--color-gold)',marginBottom:16 }}>
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ marginRight:7 }}><circle cx="6" cy="6" r="5" stroke="var(--color-gold)" strokeWidth="1.2"/><path d="M4 6h4M6 4v4" stroke="var(--color-gold)" strokeWidth="1.2" strokeLinecap="round"/></svg>
+            Your Action Items
+          </div>
+          {data.actions.map((item,i) => (
+            <div key={i} style={{ display:'flex',alignItems:'flex-start',gap:12,marginBottom:i<data.actions.length-1?12:0 }}>
+              <span style={{ fontFamily:'var(--font-body)',fontSize:11,fontWeight:600,color:'var(--color-white)',background:'var(--color-gold)',width:18,height:18,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,marginTop:1 }}>{i+1}</span>
+              <span style={{ fontFamily:'var(--font-body)',fontSize:14,fontWeight:400,color:'var(--color-text-primary)',lineHeight:1.5 }}>{item}</span>
+            </div>
+          ))}
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+
+/* ── PAGE: MARKETING ALL ─────────────────────────────────── */
+
+function MktAllPage() {
+  const [period, setPeriod] = React.useState('monthly');
+
+  function fmtRev(v) { return v >= 1000 ? `$${(v/1000).toFixed(0)}k` : `$${v}`; }
+  function fmtPct(v) { return `${v}%`; }
+  function fmtX(v)   { return `${v}x`; }
+  function fmtCac(v) { return `$${v}`; }
+  function fmtSessions(v) { return v >= 1000 ? `${(v/1000).toFixed(1)}k` : `${v}`; }
+
+  const metricDefs = [
+    { key:'revenue',  label:'Revenue',    fmt:fmtRev },
+    { key:'newRev',   label:'New Rev',    fmt:fmtRev },
+    { key:'retRate',  label:'Ret. Rate',  fmt:fmtPct },
+    { key:'aov',      label:'AOV',        fmt:v => `$${v}` },
+    { key:'conv',     label:'Conv%',      fmt:fmtPct },
+    { key:'mer',      label:'MER',        fmt:fmtX },
+    { key:'roas',     label:'ROAS',       fmt:fmtX },
+    { key:'cac',      label:'CAC',        fmt:fmtCac },
+    { key:'sessions', label:'Sessions',   fmt:fmtSessions },
+    { key:'mobile',   label:'Mobile%',    fmt:fmtPct, noChg:true },
+  ];
+
+  // Collect attention items: |chg| >= 15
+  const attentionItems = [];
+  CLIENTS.forEach(client => {
+    const d = mktPerformance[client];
+    if (!d) return;
+    const data = period === 'weekly' ? d.weekly : d.monthly;
+    metricDefs.forEach(md => {
+      if (md.noChg) return;
+      const m = data[md.key];
+      if (m && Math.abs(m.chg) >= 15) {
+        attentionItems.push({ client, metric: md.label, chg: m.chg });
+      }
+    });
+  });
+
+  return (
+    <div className="page-enter" style={{ flex:1,overflowY:'auto',background:'var(--color-cream)',minHeight:'100vh' }}>
+      <PageHeader section="Marketing" title="All Clients" />
+
+      {/* Period toggle */}
+      <div style={{ padding:'18px 40px 0',display:'flex',gap:0 }}>
+        {[['weekly','Week'],['monthly','Month']].map(([val,label]) => (
+          <button key={val} onClick={() => setPeriod(val)} style={{ fontFamily:'var(--font-body)',fontSize:12,fontWeight:period===val?600:400,color:period===val?'var(--color-brown-deep)':'var(--color-text-tertiary)',background:'none',border:'none',padding:'6px 16px',cursor:'pointer',borderBottom:period===val?'2px solid var(--color-gold)':'2px solid transparent',transition:'all 150ms ease' }}>{label}</button>
+        ))}
+      </div>
+
+      <div style={{ padding:'18px 40px 60px' }}>
+
+        {/* Needs Attention */}
+        {attentionItems.length > 0 && (
+          <div style={{ background:'rgba(201,168,76,0.06)',border:'1px solid rgba(201,168,76,0.3)',borderRadius:4,padding:'16px 20px',marginBottom:22 }}>
+            <div style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--color-gold)',marginBottom:12 }}>Needs Attention</div>
+            <div style={{ display:'flex',gap:8,flexWrap:'wrap' }}>
+              {attentionItems.map((item,i) => {
+                const isGood = item.chg > 0 && (item.metric === 'Revenue' || item.metric === 'New Rev' || item.metric === 'Ret. Rate' || item.metric === 'Conv%' || item.metric === 'MER' || item.metric === 'ROAS' || item.metric === 'AOV' || item.metric === 'Sessions' || item.metric === 'Mobile%');
+                const isBad = item.chg < 0 && (item.metric === 'Revenue' || item.metric === 'New Rev' || item.metric === 'Ret. Rate' || item.metric === 'Conv%' || item.metric === 'MER' || item.metric === 'ROAS' || item.metric === 'AOV' || item.metric === 'Sessions');
+                const isBadHigh = item.chg > 0 && item.metric === 'CAC';
+                const isGoodLow = item.chg < 0 && item.metric === 'CAC';
+                const color = (isGood || isGoodLow) ? '#5a7a58' : '#8a4030';
+                const bg = (isGood || isGoodLow) ? 'rgba(139,158,137,0.1)' : 'rgba(180,100,80,0.08)';
+                const border = (isGood || isGoodLow) ? 'rgba(139,158,137,0.25)' : 'rgba(180,100,80,0.2)';
+                const arrow = item.chg > 0 ? '▲' : '▼';
+                return (
+                  <span key={i} style={{ fontFamily:'var(--font-body)',fontSize:11,fontWeight:500,color,background:bg,border:`1px solid ${border}`,borderRadius:20,padding:'3px 10px' }}>
+                    {item.client} · {item.metric} {arrow}{Math.abs(item.chg)}%
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Performance Table */}
+        <div style={{ background:'var(--color-white)',border:'1px solid var(--color-border)',borderRadius:4,overflow:'hidden' }}>
+          <div style={{ overflowX:'auto' }}>
+            <table style={{ width:'100%',borderCollapse:'collapse',minWidth:900 }}>
+              <thead>
+                <tr style={{ background:'var(--color-cream)' }}>
+                  <th style={{ fontFamily:'var(--font-body)',fontSize:9.5,fontWeight:600,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--color-text-tertiary)',textAlign:'left',padding:'12px 16px',borderBottom:'1px solid var(--color-border-subtle)',whiteSpace:'nowrap' }}>Client</th>
+                  {metricDefs.map(md => (
+                    <th key={md.key} style={{ fontFamily:'var(--font-body)',fontSize:9.5,fontWeight:600,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--color-text-tertiary)',textAlign:'right',padding:'12px 12px',borderBottom:'1px solid var(--color-border-subtle)',whiteSpace:'nowrap' }}>{md.label}</th>
+                  ))}
+                  <th style={{ fontFamily:'var(--font-body)',fontSize:9.5,fontWeight:600,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--color-text-tertiary)',textAlign:'center',padding:'12px 12px',borderBottom:'1px solid var(--color-border-subtle)',whiteSpace:'nowrap' }}>Flags</th>
+                </tr>
+              </thead>
+              <tbody>
+                {CLIENTS.map((client, ri) => {
+                  const d = mktPerformance[client];
+                  if (!d) return null;
+                  const data = period === 'weekly' ? d.weekly : d.monthly;
+                  let flagCount = 0;
+                  return (
+                    <tr key={client} style={{ borderBottom:'1px solid var(--color-border-subtle)',background:ri%2===0?'rgba(248,244,238,0.4)':'transparent' }}>
+                      <td style={{ padding:'12px 16px',fontFamily:'var(--font-body)',fontSize:13,fontWeight:500,color:'var(--color-text-primary)',whiteSpace:'nowrap' }}>{client}</td>
+                      {metricDefs.map(md => {
+                        const m = data[md.key];
+                        const val = typeof m === 'object' ? m.v : m;
+                        const chg = typeof m === 'object' ? m.chg : null;
+                        const flagged = chg !== null && Math.abs(chg) >= 15;
+                        if (flagged) flagCount++;
+                        const isPositive = chg !== null && ((chg > 0 && md.key !== 'cac') || (chg < 0 && md.key === 'cac'));
+                        const isNegative = chg !== null && ((chg < 0 && md.key !== 'cac') || (chg > 0 && md.key === 'cac'));
+                        return (
+                          <td key={md.key} style={{ padding:'12px 12px',textAlign:'right',background:flagged?'rgba(201,168,76,0.06)':'transparent' }}>
+                            <span style={{ fontFamily:'var(--font-body)',fontSize:12.5,fontWeight:400,color:'var(--color-text-primary)' }}>{md.fmt(val)}</span>
+                            {flagged && chg !== null && (
+                              <span style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,marginLeft:4,color:isPositive?'#5a7a58':'#8a4030' }}>
+                                {isPositive?'▲':'▼'}{Math.abs(chg)}%
+                              </span>
+                            )}
+                          </td>
+                        );
+                      })}
+                      <td style={{ padding:'12px 12px',textAlign:'center' }}>
+                        {flagCount > 0
+                          ? <span style={{ fontFamily:'var(--font-body)',fontSize:11,fontWeight:600,color:'var(--color-white)',background:'var(--color-brown-deep)',borderRadius:20,padding:'2px 8px' }}>{flagCount}</span>
+                          : <span style={{ fontFamily:'var(--font-body)',fontSize:11,color:'var(--color-text-tertiary)' }}>—</span>}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+
+/* ── PAGE: MARKETING CLIENT ──────────────────────────────── */
+
+function WeeklyReportPanel({ perf, activeClient, onClose }) {
+  const [notes, setNotes] = React.useState('');
+  const [copied, setCopied] = React.useState(false);
+  const w = perf.weekly;
+
+  const topChannels = perf.channels
+    .filter(c => c.spend > 0)
+    .sort((a,b) => b.revenue - a.revenue)
+    .map(c => `${c.name} $${c.spend >= 1000 ? (c.spend/1000).toFixed(1)+'k' : c.spend}`)
+    .join(' / ');
+
+  const rows = [
+    { col:'Date',           val: perf.period.week + ', 2026' },
+    { col:'Revenue',        val: `$${w.revenue.v.toLocaleString()}` },
+    { col:'RCR',            val: `${w.retRate.v}%` },
+    { col:'CVR',            val: `${w.conv.v}%` },
+    { col:'AOV',            val: `$${w.aov.v}` },
+    { col:'Channel Mix',    val: topChannels },
+    { col:'Mobile/Desktop', val: `${w.mobile}% mobile / ${100-w.mobile}% desktop` },
+    { col:'Notes',          val: notes, editable: true },
+  ];
+
+  function handleCopy() {
+    const tsv = rows.map(r => r.editable ? notes : r.val).join('\t');
+    navigator.clipboard?.writeText(tsv);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2200);
+  }
+
+  const cellLabel = { padding:'11px 18px', fontFamily:'var(--font-body)', fontSize:10, fontWeight:600, letterSpacing:'0.07em', textTransform:'uppercase', color:'var(--color-text-tertiary)', borderRight:'1px solid var(--color-border-subtle)', background:'rgba(248,244,238,0.6)', minWidth:148 };
+  const cellVal = { padding:'11px 18px', fontFamily:'var(--font-body)', fontSize:13, color:'var(--color-text-primary)' };
+
+  return (
+    <div style={{ position:'fixed', inset:0, zIndex:300 }}>
+      <div onClick={onClose} style={{ position:'absolute', inset:0, background:'rgba(44,24,16,0.38)' }} />
+      <div style={{ position:'absolute', right:0, top:0, height:'100%', width:580, background:'var(--color-cream)', boxShadow:'-4px 0 32px rgba(0,0,0,0.14)', display:'flex', flexDirection:'column', animation:'slideInRight 280ms ease' }}>
+
+        {/* Header */}
+        <div style={{ padding:'28px 32px 20px', borderBottom:'1px solid var(--color-border)', display:'flex', alignItems:'flex-start', justifyContent:'space-between', flexShrink:0 }}>
+          <div>
+            <div style={{ fontFamily:'var(--font-body)', fontSize:10, fontWeight:600, letterSpacing:'0.12em', textTransform:'uppercase', color:'var(--color-text-tertiary)', marginBottom:6 }}>Weekly Report</div>
+            <div style={{ fontFamily:'var(--font-display)', fontSize:22, fontWeight:400, color:'var(--color-text-primary)' }}>{activeClient}</div>
+            <div style={{ fontFamily:'var(--font-body)', fontSize:12, color:'var(--color-text-tertiary)', marginTop:3 }}>{perf.period.week} · Baseline Metrics Tracker</div>
+          </div>
+          <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', fontSize:22, color:'var(--color-text-tertiary)', padding:'2px 6px', lineHeight:1, marginTop:-4 }}>×</button>
+        </div>
+
+        {/* Scrollable body */}
+        <div style={{ flex:1, overflowY:'auto', padding:'24px 32px 32px' }}>
+
+          {/* Current week entry */}
+          <div style={{ marginBottom:6, fontFamily:'var(--font-body)', fontSize:10, fontWeight:600, letterSpacing:'0.1em', textTransform:'uppercase', color:'var(--color-text-tertiary)' }}>Current Entry</div>
+          <div style={{ background:'white', border:'1px solid var(--color-border)', borderRadius:4, marginBottom:20, overflow:'hidden' }}>
+            <div style={{ padding:'10px 18px', background:'rgba(201,168,76,0.07)', borderBottom:'1px solid var(--color-border-subtle)', display:'flex', alignItems:'center', gap:10 }}>
+              <span style={{ fontFamily:'var(--font-body)', fontSize:11, fontWeight:600, color:'var(--color-gold)', letterSpacing:'0.05em' }}>{perf.period.week}, 2026</span>
+              <span style={{ fontFamily:'var(--font-body)', fontSize:10, color:'var(--color-text-tertiary)' }}>— autofilled from current data</span>
+            </div>
+            {rows.map((r, i) => (
+              <div key={i} style={{ display:'grid', gridTemplateColumns:'148px 1fr', borderBottom: i < rows.length-1 ? '1px solid var(--color-border-subtle)' : 'none', alignItems: r.editable ? 'flex-start' : 'center' }}>
+                <div style={cellLabel}>{r.col}</div>
+                {r.editable ? (
+                  <textarea
+                    value={notes}
+                    onChange={e => setNotes(e.target.value)}
+                    placeholder="Add context, anomalies, or observations for this week..."
+                    style={{ padding:'10px 18px', fontFamily:'var(--font-body)', fontSize:13, color:'var(--color-text-primary)', background:'transparent', border:'none', outline:'none', resize:'vertical', minHeight:76, lineHeight:1.5, width:'100%', boxSizing:'border-box' }}
+                  />
+                ) : (
+                  <div style={{ ...cellVal, fontWeight: r.col === 'Revenue' ? 500 : 400 }}>{r.val}</div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Historical reference */}
+          <div style={{ marginBottom:6, fontFamily:'var(--font-body)', fontSize:10, fontWeight:600, letterSpacing:'0.1em', textTransform:'uppercase', color:'var(--color-text-tertiary)' }}>Monthly Overview — Prior Periods</div>
+          <div style={{ background:'white', border:'1px solid var(--color-border)', borderRadius:4, overflow:'hidden', marginBottom:20 }}>
+            <table style={{ width:'100%', borderCollapse:'collapse' }}>
+              <thead>
+                <tr style={{ background:'rgba(248,244,238,0.5)' }}>
+                  {['Month','Revenue','Δ Rev','RCR','CVR','AOV'].map(h => (
+                    <th key={h} style={{ padding:'8px 14px', fontFamily:'var(--font-body)', fontSize:9.5, fontWeight:600, letterSpacing:'0.07em', textTransform:'uppercase', color:'var(--color-text-tertiary)', textAlign:h==='Month'?'left':'right', borderBottom:'1px solid var(--color-border-subtle)' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {perf.revTrend.map((rev, i) => {
+                  const isCurrent = i === perf.revTrend.length - 1;
+                  const prev = i > 0 ? perf.revTrend[i-1] : null;
+                  const pct = prev ? Math.round(((rev - prev)/prev)*100) : null;
+                  // Pull current month metrics from monthly data
+                  const mo = perf.monthly;
+                  return (
+                    <tr key={i} style={{ background: isCurrent ? 'rgba(201,168,76,0.05)' : 'transparent', borderBottom:'1px solid var(--color-border-subtle)' }}>
+                      <td style={{ padding:'9px 14px', fontFamily:'var(--font-body)', fontSize:12.5, fontWeight:isCurrent?600:400, color:isCurrent?'var(--color-text-primary)':'var(--color-text-secondary)' }}>{perf.revLabels[i]}{isCurrent?' *':''}</td>
+                      <td style={{ padding:'9px 14px', fontFamily:'var(--font-body)', fontSize:12.5, color:'var(--color-text-secondary)', textAlign:'right' }}>${(rev/1000).toFixed(1)}k</td>
+                      <td style={{ padding:'9px 14px', textAlign:'right' }}>
+                        {pct !== null ? <span style={{ fontFamily:'var(--font-body)', fontSize:10.5, fontWeight:600, color:pct>=0?'#5a7a58':'#8a4030' }}>{pct>=0?'▲':'▼'}{Math.abs(pct)}%</span> : <span style={{ color:'var(--color-text-tertiary)',fontSize:11 }}>—</span>}
+                      </td>
+                      <td style={{ padding:'9px 14px', fontFamily:'var(--font-body)', fontSize:12.5, color:'var(--color-text-secondary)', textAlign:'right' }}>{isCurrent ? `${mo.retRate.v}%` : '—'}</td>
+                      <td style={{ padding:'9px 14px', fontFamily:'var(--font-body)', fontSize:12.5, color:'var(--color-text-secondary)', textAlign:'right' }}>{isCurrent ? `${mo.conv.v}%` : '—'}</td>
+                      <td style={{ padding:'9px 14px', fontFamily:'var(--font-body)', fontSize:12.5, color:'var(--color-text-secondary)', textAlign:'right' }}>{isCurrent ? `$${mo.aov.v}` : '—'}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            <div style={{ padding:'8px 14px', fontFamily:'var(--font-body)', fontSize:10, color:'var(--color-text-tertiary)', fontStyle:'italic', borderTop:'1px solid var(--color-border-subtle)' }}>* Current month (May 2026) — prior-period detail available in tracker</div>
+          </div>
+
+        </div>
+
+        {/* Footer actions */}
+        <div style={{ padding:'16px 32px', borderTop:'1px solid var(--color-border)', display:'flex', gap:10, flexShrink:0, background:'var(--color-cream)' }}>
+          <button onClick={handleCopy} style={{ flex:1, fontFamily:'var(--font-body)', fontSize:12, fontWeight:600, padding:'10px 0', background: copied ? 'rgba(90,122,88,0.12)' : 'var(--color-brown-deep)', color: copied ? '#5a7a58' : 'var(--color-cream)', border: copied ? '1px solid rgba(90,122,88,0.3)' : '1px solid transparent', borderRadius:4, cursor:'pointer', transition:'all 200ms ease', letterSpacing:'0.04em' }}>
+            {copied ? '✓  Copied to clipboard' : 'Copy Row (Tab-separated)'}
+          </button>
+          <button style={{ fontFamily:'var(--font-body)', fontSize:12, fontWeight:500, padding:'10px 18px', background:'none', color:'var(--color-text-secondary)', border:'1px solid var(--color-border)', borderRadius:4, cursor:'pointer' }}>Export as CSV</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MktClientPage({ activeClient }) {
+  const [period, setPeriod] = React.useState('monthly');
+  const [showReport, setShowReport] = React.useState(false);
+  const perf = mktPerformance[activeClient] || mktPerformance['My Neighbors'];
+  const data = period === 'weekly' ? perf.weekly : perf.monthly;
+  const periodLabel = period === 'weekly' ? perf.period.week : perf.period.month;
+
+  function fmtRev(v) { return v >= 1000 ? `$${(v/1000).toFixed(0)}k` : `$${v}`; }
+  function chgBadge(chg, invertGood) {
+    const isGood = invertGood ? chg < 0 : chg > 0;
+    const color = isGood ? '#5a7a58' : '#8a4030';
+    const bg = isGood ? 'rgba(139,158,137,0.12)' : 'rgba(180,100,80,0.1)';
+    const arrow = chg > 0 ? '▲' : '▼';
+    return <span style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,color,background:bg,borderRadius:20,padding:'2px 7px',marginLeft:6 }}>{arrow}{Math.abs(chg)}%</span>;
+  }
+
+  // Sparkline bars
+  const maxTrend = Math.max(...perf.revTrend);
+  const minTrend = Math.min(...perf.revTrend);
+  const trendRange = maxTrend - minTrend || 1;
+
+  const emailItems = [
+    { label:'Pop-up capture', on: perf.email.popup.on },
+    { label:'Welcome flow',   on: perf.email.welcome },
+    { label:'Abandoned cart', on: perf.email.cart },
+    { label:'Post-purchase',  on: perf.email.postPurchase },
+  ];
+
+  return (
+    <div className="page-enter" style={{ flex:1,overflowY:'auto',background:'var(--color-cream)',minHeight:'100vh' }}>
+      <PageHeader section="Marketing" title="Marketing Performance" />
+
+      {/* Period toggle */}
+      <div style={{ padding:'14px 40px 0',display:'flex',gap:0 }}>
+        {[['weekly','Week'],['monthly','Month']].map(([val,label]) => (
+          <button key={val} onClick={() => setPeriod(val)} style={{ fontFamily:'var(--font-body)',fontSize:12,fontWeight:period===val?600:400,color:period===val?'var(--color-brown-deep)':'var(--color-text-tertiary)',background:'none',border:'none',padding:'6px 16px',cursor:'pointer',borderBottom:period===val?'2px solid var(--color-gold)':'2px solid transparent',transition:'all 150ms ease' }}>{label}</button>
+        ))}
+      </div>
+
+      <div style={{ padding:'16px 40px 0 40px',fontFamily:'var(--font-body)',fontSize:12,fontWeight:300,color:'var(--color-text-tertiary)',fontStyle:'italic' }}>{activeClient} · {periodLabel}</div>
+
+      <div style={{ padding:'16px 40px 60px' }}>
+
+        {/* Section A — Revenue & Customers */}
+        <div style={{ background:'var(--color-white)',border:'1px solid var(--color-border)',borderRadius:4,padding:'20px 24px',marginBottom:20 }}>
+          <div style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--color-text-tertiary)',marginBottom:16 }}>Revenue &amp; Customers</div>
+          <div style={{ display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:14,marginBottom:18 }}>
+            {[
+              { label:'Revenue',       val:fmtRev(data.revenue.v), chg:data.revenue.chg, inv:false },
+              { label:'New Cust Rev',  val:fmtRev(data.newRev.v),  chg:data.newRev.chg,  inv:false },
+              { label:'Returning Rate',val:`${data.retRate.v}%`,   chg:data.retRate.chg,  inv:false },
+              { label:'AOV',           val:`$${data.aov.v}`,       chg:data.aov.chg,      inv:false },
+            ].map((tile,i) => (
+              <div key={i} style={{ background:'var(--color-cream)',border:'1px solid var(--color-border-subtle)',borderRadius:4,padding:'16px 16px 14px' }}>
+                <div style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,letterSpacing:'0.07em',textTransform:'uppercase',color:'var(--color-text-tertiary)',marginBottom:8 }}>{tile.label}</div>
+                <div style={{ display:'flex',alignItems:'center',flexWrap:'wrap',marginBottom:2 }}>
+                  <span style={{ fontFamily:'var(--font-display)',fontSize:26,fontWeight:400,color:'var(--color-text-primary)',lineHeight:1 }}>{tile.val}</span>
+                  {chgBadge(tile.chg, tile.inv)}
+                </div>
+              </div>
+            ))}
+          </div>
+          {/* Mini sparkline */}
+          <div style={{ borderTop:'1px solid var(--color-border-subtle)',paddingTop:14 }}>
+            <div style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,letterSpacing:'0.07em',textTransform:'uppercase',color:'var(--color-text-tertiary)',marginBottom:10 }}>Revenue Trend</div>
+            <div style={{ display:'flex',alignItems:'flex-end',gap:6,height:48 }}>
+              {perf.revTrend.map((v,i) => {
+                const heightPct = ((v - minTrend) / trendRange) * 70 + 30;
+                return (
+                  <div key={i} style={{ flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:4 }}>
+                    <div style={{ width:'100%',height:`${heightPct}%`,background:'var(--color-gold)',opacity:i===perf.revTrend.length-1?1:0.45,borderRadius:'2px 2px 0 0',minHeight:4 }} />
+                    <span style={{ fontFamily:'var(--font-body)',fontSize:9,color:'var(--color-text-tertiary)' }}>{perf.revLabels[i]}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Section B — Acquisition & Spend */}
+        <div style={{ background:'var(--color-white)',border:'1px solid var(--color-border)',borderRadius:4,padding:'20px 24px',marginBottom:20 }}>
+          <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16 }}>
+            <div style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--color-text-tertiary)' }}>Acquisition &amp; Spend</div>
+            <div style={{ display:'flex',alignItems:'center',gap:8 }}>
+              <span style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:500,color:'var(--color-text-tertiary)' }}>MER</span>
+              <span style={{ fontFamily:'var(--font-display)',fontSize:20,fontWeight:500,color:'var(--color-text-primary)' }}>{data.mer.v}x</span>
+              {chgBadge(data.mer.chg, false)}
+            </div>
+          </div>
+          <table style={{ width:'100%',borderCollapse:'collapse' }}>
+            <thead>
+              <tr>
+                {['Channel','Spend','ROAS','Revenue'].map(h => (
+                  <th key={h} style={{ fontFamily:'var(--font-body)',fontSize:9.5,fontWeight:600,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--color-text-tertiary)',textAlign:h==='Channel'?'left':'right',padding:'8px 10px',borderBottom:'1px solid var(--color-border-subtle)' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {perf.channels.map((ch,i) => (
+                <tr key={i} style={{ borderBottom:'1px solid var(--color-border-subtle)',background:i%2===0?'rgba(248,244,238,0.4)':'transparent' }}>
+                  <td style={{ padding:'9px 10px',fontFamily:'var(--font-body)',fontSize:13,fontWeight:400,color:'var(--color-text-primary)' }}>{ch.name}</td>
+                  <td style={{ padding:'9px 10px',fontFamily:'var(--font-body)',fontSize:12.5,color:'var(--color-text-secondary)',textAlign:'right' }}>{ch.spend > 0 ? `$${ch.spend.toLocaleString()}` : '—'}</td>
+                  <td style={{ padding:'9px 10px',fontFamily:'var(--font-body)',fontSize:12.5,color:'var(--color-text-secondary)',textAlign:'right' }}>{ch.roas != null ? `${ch.roas}x` : '—'}</td>
+                  <td style={{ padding:'9px 10px',fontFamily:'var(--font-body)',fontSize:12.5,color:'var(--color-text-secondary)',textAlign:'right' }}>${ch.revenue.toLocaleString()}</td>
+                </tr>
+              ))}
+              <tr style={{ borderTop:'2px solid var(--color-border)' }}>
+                <td style={{ padding:'9px 10px',fontFamily:'var(--font-body)',fontSize:12.5,fontWeight:600,color:'var(--color-text-primary)' }}>Total</td>
+                <td style={{ padding:'9px 10px',fontFamily:'var(--font-body)',fontSize:12.5,fontWeight:600,color:'var(--color-text-primary)',textAlign:'right' }}>${perf.channels.reduce((a,c)=>a+c.spend,0).toLocaleString()}</td>
+                <td style={{ padding:'9px 10px',textAlign:'right' }}>—</td>
+                <td style={{ padding:'9px 10px',fontFamily:'var(--font-body)',fontSize:12.5,fontWeight:600,color:'var(--color-text-primary)',textAlign:'right' }}>${perf.channels.reduce((a,c)=>a+c.revenue,0).toLocaleString()}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* Section C — Site Performance */}
+        <div style={{ background:'var(--color-white)',border:'1px solid var(--color-border)',borderRadius:4,padding:'20px 24px',marginBottom:20 }}>
+          <div style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--color-text-tertiary)',marginBottom:16 }}>Site Performance</div>
+          <div style={{ display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:14,marginBottom:20 }}>
+            {[
+              { label:'Conv. Rate', val:`${data.conv.v}%`, chg:data.conv.chg, inv:false },
+              { label:'Sessions',   val:data.sessions.v >= 1000 ? `${(data.sessions.v/1000).toFixed(1)}k` : `${data.sessions.v}`, chg:data.sessions.chg, inv:false },
+            ].map((tile,i) => (
+              <div key={i} style={{ background:'var(--color-cream)',border:'1px solid var(--color-border-subtle)',borderRadius:4,padding:'16px 16px 14px' }}>
+                <div style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,letterSpacing:'0.07em',textTransform:'uppercase',color:'var(--color-text-tertiary)',marginBottom:8 }}>{tile.label}</div>
+                <div style={{ display:'flex',alignItems:'center',flexWrap:'wrap' }}>
+                  <span style={{ fontFamily:'var(--font-display)',fontSize:26,fontWeight:400,color:'var(--color-text-primary)',lineHeight:1 }}>{tile.val}</span>
+                  {chgBadge(tile.chg, tile.inv)}
+                </div>
+              </div>
+            ))}
+            {/* Mobile split tile */}
+            <div style={{ background:'var(--color-cream)',border:'1px solid var(--color-border-subtle)',borderRadius:4,padding:'16px 16px 14px' }}>
+              <div style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,letterSpacing:'0.07em',textTransform:'uppercase',color:'var(--color-text-tertiary)',marginBottom:8 }}>Mobile %</div>
+              <div style={{ fontFamily:'var(--font-display)',fontSize:26,fontWeight:400,color:'var(--color-text-primary)',lineHeight:1,marginBottom:8 }}>{data.mobile}%</div>
+              <div style={{ height:6,background:'var(--color-border)',borderRadius:3,overflow:'hidden' }}>
+                <div style={{ height:'100%',width:`${data.mobile}%`,background:'var(--color-gold)',borderRadius:3 }} />
+              </div>
+              <div style={{ display:'flex',justifyContent:'space-between',marginTop:4 }}>
+                <span style={{ fontFamily:'var(--font-body)',fontSize:9.5,color:'var(--color-text-tertiary)' }}>Mobile {data.mobile}%</span>
+                <span style={{ fontFamily:'var(--font-body)',fontSize:9.5,color:'var(--color-text-tertiary)' }}>Desktop {100-data.mobile}%</span>
+              </div>
+            </div>
+          </div>
+          {/* Top pages */}
+          <div>
+            <div style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,letterSpacing:'0.07em',textTransform:'uppercase',color:'var(--color-text-tertiary)',marginBottom:10 }}>Top Landing Pages</div>
+            {perf.topPages.map((pg,i) => (
+              <div key={i} style={{ display:'flex',alignItems:'center',gap:12,padding:'8px 0',borderBottom:i<perf.topPages.length-1?'1px solid var(--color-border-subtle)':'none' }}>
+                <span style={{ fontFamily:'var(--font-body)',fontSize:12,fontWeight:400,color:'var(--color-text-secondary)',flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }}>{pg.page}</span>
+                <span style={{ fontFamily:'var(--font-body)',fontSize:12,fontWeight:500,color:'var(--color-text-primary)',flexShrink:0 }}>${pg.revenue.toLocaleString()}</span>
+                <span style={{ fontFamily:'var(--font-body)',fontSize:11,color:'var(--color-text-tertiary)',flexShrink:0 }}>{pg.sessions.toLocaleString()} sessions</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Section D — Email / Lifecycle */}
+        <div style={{ background:'var(--color-white)',border:'1px solid var(--color-border)',borderRadius:4,padding:'20px 24px',marginBottom:20 }}>
+          <div style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--color-text-tertiary)',marginBottom:16 }}>Email &amp; Lifecycle</div>
+          <div style={{ display:'flex',gap:10,flexWrap:'wrap',marginBottom:16 }}>
+            {emailItems.map((item,i) => (
+              <span key={i} style={{ fontFamily:'var(--font-body)',fontSize:11.5,fontWeight:500,padding:'5px 12px',borderRadius:20,background:item.on?'rgba(139,158,137,0.14)':'rgba(160,149,139,0.1)',color:item.on?'#5a7a58':'var(--color-text-tertiary)',border:`1px solid ${item.on?'rgba(139,158,137,0.3)':'rgba(160,149,139,0.2)'}` }}>
+                {item.on ? '● ' : '○ '}{item.label}
+              </span>
+            ))}
+          </div>
+          <div style={{ display:'flex',gap:24,flexWrap:'wrap' }}>
+            <div>
+              <span style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,letterSpacing:'0.07em',textTransform:'uppercase',color:'var(--color-text-tertiary)' }}>Cadence </span>
+              <span style={{ fontFamily:'var(--font-body)',fontSize:13,fontWeight:400,color:'var(--color-text-primary)' }}>{perf.email.cadence}</span>
+            </div>
+            {perf.email.popup.on && perf.email.popup.rate != null && (
+              <div>
+                <span style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,letterSpacing:'0.07em',textTransform:'uppercase',color:'var(--color-text-tertiary)' }}>Pop-up Opt-in </span>
+                <span style={{ fontFamily:'var(--font-body)',fontSize:13,fontWeight:400,color:'var(--color-text-primary)' }}>{perf.email.popup.rate}%</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Create Weekly Report button */}
+        <div style={{ display:'flex', justifyContent:'flex-end' }}>
+          <button
+            onClick={() => setShowReport(true)}
+            style={{ fontFamily:'var(--font-body)', fontSize:13, fontWeight:600, letterSpacing:'0.04em', padding:'12px 24px', background:'var(--color-brown-deep)', color:'var(--color-cream)', border:'none', borderRadius:4, cursor:'pointer', display:'flex', alignItems:'center', gap:8 }}
+          >
+            <span style={{ fontSize:15 }}>+</span> Create Weekly Report
+          </button>
+        </div>
+
+      </div>
+
+      {showReport && <WeeklyReportPanel perf={perf} activeClient={activeClient} onClose={() => setShowReport(false)} />}
+
+    </div>
+  );
+}
+
+
+/* ── LOGIN ───────────────────────────────────────────────── */
+
+function LoginPage({ onLogin }) {
+  const [email, setEmail]       = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [error, setError]       = React.useState('');
+  const [loading, setLoading]   = React.useState(false);
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    setTimeout(() => {
+      const match = USERS.find(u => u.email.toLowerCase() === email.trim().toLowerCase() && u.password === password);
+      if (match) {
+        localStorage.setItem('evgn_session', JSON.stringify({ email: match.email, name: match.name }));
+        onLogin(match);
+      } else {
+        setError('Incorrect email or password.');
+        setLoading(false);
+      }
+    }, 420);
+  }
+
+  const inputStyle = { width:'100%', boxSizing:'border-box', fontFamily:'var(--font-body)', fontSize:13, padding:'11px 14px', borderRadius:4, border:'1px solid var(--color-border)', background:'white', color:'var(--color-text-primary)', outline:'none', transition:'border-color 160ms ease' };
+
+  return (
+    <div style={{ minHeight:'100vh', background:'var(--color-cream)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:24 }}>
+      <div style={{ width:'100%', maxWidth:380 }}>
+
+        {/* Logo */}
+        <div style={{ textAlign:'center', marginBottom:40 }}>
+          <div style={{ fontFamily:'var(--font-display)', fontSize:36, fontWeight:400, letterSpacing:'0.12em', color:'var(--color-brown-deep)' }}>evgn</div>
+          <div style={{ fontFamily:'var(--font-body)', fontSize:12, color:'var(--color-text-tertiary)', marginTop:6, letterSpacing:'0.04em' }}>Intelligence OS</div>
+        </div>
+
+        {/* Card */}
+        <div style={{ background:'white', border:'1px solid var(--color-border)', borderRadius:6, padding:'32px 32px 28px', boxShadow:'0 2px 16px rgba(44,24,16,0.06)' }}>
+          <div style={{ fontFamily:'var(--font-body)', fontSize:15, fontWeight:600, color:'var(--color-text-primary)', marginBottom:22 }}>Sign in to your workspace</div>
+
+          <form onSubmit={handleSubmit}>
+            <div style={{ marginBottom:14 }}>
+              <label style={{ display:'block', fontFamily:'var(--font-body)', fontSize:10.5, fontWeight:600, letterSpacing:'0.08em', textTransform:'uppercase', color:'var(--color-text-tertiary)', marginBottom:6 }}>Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                autoFocus
+                required
+                style={inputStyle}
+              />
+            </div>
+
+            <div style={{ marginBottom:20 }}>
+              <label style={{ display:'block', fontFamily:'var(--font-body)', fontSize:10.5, fontWeight:600, letterSpacing:'0.08em', textTransform:'uppercase', color:'var(--color-text-tertiary)', marginBottom:6 }}>Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                style={inputStyle}
+              />
+            </div>
+
+            {error && (
+              <div style={{ fontFamily:'var(--font-body)', fontSize:12, color:'#8a4030', background:'rgba(180,100,80,0.07)', border:'1px solid rgba(180,100,80,0.2)', borderRadius:4, padding:'8px 12px', marginBottom:16 }}>{error}</div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              style={{ width:'100%', fontFamily:'var(--font-body)', fontSize:13, fontWeight:600, letterSpacing:'0.04em', padding:'12px 0', background: loading ? 'rgba(44,24,16,0.5)' : 'var(--color-brown-deep)', color:'var(--color-cream)', border:'none', borderRadius:4, cursor: loading ? 'default' : 'pointer', transition:'background 200ms ease' }}
+            >
+              {loading ? 'Signing in…' : 'Sign In'}
+            </button>
+          </form>
+        </div>
+
+        <div style={{ textAlign:'center', marginTop:20, fontFamily:'var(--font-body)', fontSize:11, color:'var(--color-text-tertiary)' }}>
+          Evergreen New York · Internal use only
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+/* ── SIDEBAR ─────────────────────────────────────────────── */
+
+const NAV = [
+  { key:'home',   label:'Home',       path:'/',                    phase:1 },
+  { key:'intake', label:'Intake', children:[
+    { key:'pipeline', label:'Pipeline',      path:'/intake/pipeline',       phase:1 },
+    { key:'kb',       label:'Knowledge Base',path:'/intake/knowledge-base', phase:1 },
+  ]},
+  { key:'ops', label:'Operations', children:[
+    { key:'ops-all',    label:'All Clients',  path:'/operations/all',    phase:1 },
+    { key:'ops-client', label:'Client View',  path:'/operations/client', phase:1 },
+  ]},
+  { key:'mkt', label:'Marketing', children:[
+    { key:'mkt-all',    label:'All Clients',  path:'/marketing/all',    phase:1 },
+    { key:'mkt-client', label:'Client View',  path:'/marketing/client', phase:1 },
+  ]},
+  { key:'finance', label:'Finance', children:[
+    { key:'fin-all', label:'All Clients', path:'/finance', phase:2 },
+  ]},
+  { key:'coo', label:'COO Suite', children:[
+    { key:'coo-scale', label:'Scaling Infrastructure', path:'/coo', phase:2 },
+  ]},
+];
+
+function Sidebar({ currentPath, onNavigate, activeClient, onClientChange, user, onLogout }) {
+  return (
+    <aside style={{ width:224,minWidth:224,height:'100vh',background:'var(--color-brown-deep)',display:'flex',flexDirection:'column',position:'sticky',top:0,overflowY:'auto' }}>
+      <div onClick={() => onNavigate('/')} style={{ fontFamily:'var(--font-display)',fontSize:22,fontWeight:400,color:'var(--color-cream)',letterSpacing:'0.1em',padding:'28px 24px 20px',cursor:'pointer',borderBottom:'1px solid rgba(255,255,255,0.06)' }}>evgn</div>
+
+      <div style={{ padding:'14px 22px',borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ fontFamily:'var(--font-body)',fontSize:9,fontWeight:600,letterSpacing:'0.12em',textTransform:'uppercase',color:'rgba(248,244,238,0.35)',marginBottom:6 }}>Viewing</div>
+        <select value={activeClient} onChange={e => onClientChange(e.target.value)} style={{ background:'rgba(255,255,255,0.07)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:4,color:'var(--color-cream)',fontFamily:'var(--font-body)',fontSize:12,padding:'6px 28px 6px 8px',width:'100%',cursor:'pointer',appearance:'none',backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='rgba(248,244,238,0.4)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`,backgroundRepeat:'no-repeat',backgroundPosition:'right 10px center' }}>
+          {CLIENTS.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
+      </div>
+
+      <nav style={{ flex:1,padding:'10px 0',display:'flex',flexDirection:'column',gap:1 }}>
+        {NAV.map(section => (
+          <div key={section.key} style={{ marginBottom:2 }}>
+            {!section.children ? (
+              <NavItem label={section.label} active={currentPath===section.path} onClick={() => onNavigate(section.path)} />
+            ) : (
+              <>
+                <div style={{ fontFamily:'var(--font-body)',fontSize:9,fontWeight:600,letterSpacing:'0.14em',textTransform:'uppercase',color:'rgba(248,244,238,0.3)',padding:'10px 24px 3px' }}>{section.label}</div>
+                {section.children.map(child => (
+                  <NavItem key={child.key} label={child.label} active={currentPath===child.path} phase={child.phase} onClick={() => child.phase!==2 && onNavigate(child.path)} indent />
+                ))}
+              </>
+            )}
+          </div>
+        ))}
+      </nav>
+
+      <div style={{ borderTop:'1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ display:'flex',alignItems:'center',gap:6,padding:'10px 22px 6px' }}>
+          <span style={{ width:6,height:6,borderRadius:'50%',background:'var(--color-sage)',display:'inline-block',flexShrink:0 }} />
+          <span style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:500,letterSpacing:'0.08em',textTransform:'uppercase',color:'rgba(248,244,238,0.3)' }}>Phase 1</span>
+        </div>
+        {user && (
+          <div style={{ padding:'8px 22px 14px' }}>
+            <div style={{ fontFamily:'var(--font-body)',fontSize:11,color:'rgba(248,244,238,0.45)',marginBottom:6,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }}>{user.email}</div>
+            <button onClick={onLogout} style={{ fontFamily:'var(--font-body)',fontSize:10.5,fontWeight:500,letterSpacing:'0.05em',color:'rgba(248,244,238,0.35)',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:3,padding:'5px 10px',cursor:'pointer',transition:'all 150ms ease' }}>Sign out</button>
+          </div>
+        )}
+      </div>
+    </aside>
+  );
+}
+
+function NavItem({ label, active, onClick, indent, phase }) {
+  const isP2 = phase === 2;
+  return (
+    <button onClick={onClick} style={{ display:'flex',alignItems:'center',width:'100%',padding:indent?'8px 24px 8px 32px':'9px 24px',fontFamily:'var(--font-body)',fontSize:indent?11.5:12.5,fontWeight:400,letterSpacing:'0.02em',color:isP2?'rgba(248,244,238,0.25)':active?'var(--color-cream)':'rgba(248,244,238,0.55)',textAlign:'left',background:active?'rgba(248,244,238,0.07)':'none',border:'none',cursor:isP2?'default':'pointer',position:'relative',minHeight:36,borderRadius:2,transition:'color 200ms ease, background 200ms ease',opacity:isP2?0.5:1 }}>
+      {active && <span style={{ position:'absolute',left:0,top:'50%',transform:'translateY(-50%)',width:2,height:'60%',background:'var(--color-gold)',borderRadius:'0 2px 2px 0' }} />}
+      <span style={{ flex:1 }}>{label}</span>
+      {isP2 && <span style={{ fontSize:9,fontWeight:500,letterSpacing:'0.05em',textTransform:'uppercase',color:'rgba(248,244,238,0.3)',background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.1)',padding:'1px 5px',borderRadius:10,flexShrink:0 }}>Phase 2</span>}
+    </button>
+  );
+}
+
+
+/* ── APP ─────────────────────────────────────────────────── */
+
+function App() {
+  const [path, setPath] = React.useState('/');
+  const [activeClient, setActiveClient] = React.useState('My Neighbors');
+
+  // Auth — check localStorage for existing session
+  const [user, setUser] = React.useState(() => {
+    try { return JSON.parse(localStorage.getItem('evgn_session')); } catch { return null; }
+  });
+
+  function handleLogin(u) { setUser(u); }
+  function handleLogout() {
+    localStorage.removeItem('evgn_session');
+    setUser(null);
+  }
+
+  if (!user) return <LoginPage onLogin={handleLogin} />;
+
+  function renderPage() {
+    switch (path) {
+      case '/':                    return <HomePage activeClient={activeClient} />;
+      case '/intake/pipeline':     return <PipelinePage />;
+      case '/intake/knowledge-base': return <KnowledgeBasePage />;
+      case '/operations/all':      return <OpsAllPage />;
+      case '/operations/client':   return <OpsClientPage activeClient={activeClient} />;
+      case '/marketing/all':       return <MktAllPage />;
+      case '/marketing/client':    return <MktClientPage activeClient={activeClient} />;
+      default:                     return <HomePage activeClient={activeClient} />;
+    }
+  }
+
+  return (
+    <div style={{ display:'flex',height:'100vh',overflow:'hidden',background:'var(--color-cream)' }}>
+      <Sidebar currentPath={path} onNavigate={setPath} activeClient={activeClient} onClientChange={setActiveClient} user={user} onLogout={handleLogout} />
+      <main key={path + activeClient} style={{ flex:1,overflowY:'auto',display:'flex',flexDirection:'column' }}>
+        {renderPage()}
+      </main>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+
+  </script>
+</body>
+</html>
