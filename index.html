@@ -2247,7 +2247,7 @@ const OPS_SEED = {
     { id:'t9',  clientId:'c2', pillarId:'pl6', milestoneId:'ms11', title:'New SKU Development Brief',      assignee:'Tori',    dueDate:'2026-06-15', status:'Needs Attention', statusNote:"Waiting on product specs from client.",                                                   category:'admin',       createdAt:'2026-05-20' },
     { id:'t10', clientId:'c3', pillarId:'pl7', milestoneId:'ms13', title:'Case Study — Spring Residency',  assignee:'Lindsay', dueDate:'2026-07-10', status:'In Review',       statusNote:"Draft written. Awaiting client approval of quotes.",                                     category:'project',     createdAt:'2026-05-15' },
     { id:'t11', clientId:'c3', pillarId:'pl8', milestoneId:'ms14', title:'Q2 Outreach Campaign',           assignee:'Megan',   dueDate:'2026-06-30', status:'On Track',        statusNote:"3 of 5 bookings confirmed. 2 in negotiation.",                                           category:'project',     createdAt:'2026-05-01' },
-    { id:'t12', clientId:'c3', pillarId:'pl9', milestoneId:'ms17', title:'Invoice Automation Setup',       assignee:'Tori',    dueDate:'2026-06-30', status:'On Track',        statusNote:"Testing in staging. Go-live scheduled for July 1.",                                      category:'maintenance', createdAt:'2026-05-10' },
+    { id:'t12', clientId:'c3', pillarId:'pl9', milestoneId:'ms17', title:'Invoice Automation Setup',       assignee:'Tori',    dueDate:'2026-07-01', status:'On Track',        statusNote:"Go-live scheduled for July 1.",                                                          category:'maintenance', createdAt:'2026-05-10' },
     { id:'t13', clientId:'c3', pillarId:'pl8', milestoneId:'ms15', title:'Referral Program Design',        assignee:'Tori',    dueDate:'2026-07-01', status:'On Track',        statusNote:"Incentive structure drafted. Needs final approval.",                                      category:'project',     createdAt:'2026-05-22' },
   ],
   flags: [
@@ -2579,47 +2579,8 @@ function OpsClientPage({ teamMembers=[] }) {
 
       <div style={{ padding:'28px 40px 60px' }}>
 
-        {/* Pillar sections — vertical stacked */}
-        {pillars.map(pillar => {
-          const pMs    = ops.milestones.filter(m=>m.pillarId===pillar.id);
-          const pTasks = tasks.filter(t=>t.pillarId===pillar.id);
-          const doneMs = pMs.filter(m=>m.isComplete).length;
-          return (
-            <div key={pillar.id} style={{ marginBottom:20,background:'var(--color-white)',border:'1px solid var(--color-border)',borderRadius:6,overflow:'hidden' }}>
-              {/* Pillar header */}
-              <div style={{ padding:'18px 22px 16px',borderBottom:'1px solid var(--color-border-subtle)',display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:12 }}>
-                <div>
-                  <div style={{ fontFamily:'var(--font-display)',fontSize:19,fontWeight:400,color:'var(--color-text-primary)',marginBottom:2 }}>{pillar.name}</div>
-                  <div style={{ fontFamily:'var(--font-body)',fontSize:11.5,color:'var(--color-text-tertiary)' }}>{pillar.description}</div>
-                </div>
-                {pMs.length > 0 && (
-                  <div style={{ flexShrink:0,textAlign:'right' }}>
-                    <div style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--color-text-tertiary)',marginBottom:5 }}>Milestones</div>
-                    <div style={{ display:'flex',flexDirection:'column',gap:3,alignItems:'flex-end' }}>
-                      {pMs.map(ms=>(
-                        <div key={ms.id} style={{ display:'flex',alignItems:'center',gap:6 }}>
-                          <input type="checkbox" checked={ms.isComplete} onChange={()=>toggleMilestone(ms.id)} style={{ accentColor:'var(--color-gold)',width:11,height:11,flexShrink:0,cursor:'pointer' }} />
-                          <span style={{ fontFamily:'var(--font-body)',fontSize:11,color:ms.isComplete?'var(--color-text-tertiary)':'var(--color-text-secondary)',textDecoration:ms.isComplete?'line-through':'none',maxWidth:240,textAlign:'right' }}>{ms.title}</span>
-                          {ms.targetDate && <span style={{ fontFamily:'var(--font-body)',fontSize:10,color:'var(--color-text-tertiary)',whiteSpace:'nowrap' }}>{ms.targetDate}</span>}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-              {/* Tasks */}
-              <div style={{ padding:'0 22px' }}>
-                {pTasks.length === 0
-                  ? <div style={{ fontFamily:'var(--font-body)',fontSize:12,color:'var(--color-text-tertiary)',fontStyle:'italic',padding:'14px 0' }}>No tasks for this pillar yet.</div>
-                  : pTasks.map(t=><TaskRow key={t.id} task={t} />)
-                }
-              </div>
-            </div>
-          );
-        })}
-
-        {/* Operational Flags — styled as a distinct pillar */}
-        <div style={{ marginBottom:20,background:'rgba(201,168,76,0.03)',border:'1px solid rgba(201,168,76,0.25)',borderLeft:'3px solid #C9A84C',borderRadius:6,overflow:'hidden' }}>
+        {/* Operational Flags — at top */}
+        <div style={{ marginBottom:24,background:'rgba(201,168,76,0.03)',border:'1px solid rgba(201,168,76,0.25)',borderLeft:'3px solid #C9A84C',borderRadius:6,overflow:'hidden' }}>
           {/* Header */}
           <div style={{ padding:'18px 22px 14px',borderBottom:'1px solid rgba(201,168,76,0.15)',display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:12 }}>
             <div>
@@ -2672,6 +2633,45 @@ function OpsClientPage({ teamMembers=[] }) {
                 </div>
               </details>
             )}
+          </div>
+        </div>
+
+        {/* Pillar columns — horizontal scrollable */}
+        <div style={{ overflowX:'auto', paddingBottom:40 }}>
+          <div style={{ display:'flex', gap:16, alignItems:'flex-start', minWidth:'max-content' }}>
+            {pillars.map(pillar => {
+              const pMs    = ops.milestones.filter(m=>m.pillarId===pillar.id);
+              const pTasks = tasks.filter(t=>t.pillarId===pillar.id);
+              return (
+                <div key={pillar.id} style={{ width:270,flexShrink:0,background:'var(--color-white)',border:'1px solid var(--color-border)',borderRadius:6,overflow:'hidden' }}>
+                  {/* Column header */}
+                  <div style={{ padding:'14px 16px 12px',borderBottom:'1px solid var(--color-border-subtle)' }}>
+                    <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:pMs.length?8:0 }}>
+                      <div style={{ fontFamily:'var(--font-display)',fontSize:15,fontWeight:400,color:'var(--color-text-primary)',lineHeight:1.2 }}>{pillar.name}</div>
+                      <span style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:500,color:'var(--color-text-tertiary)',background:'var(--color-cream-warm)',border:'1px solid var(--color-border)',borderRadius:20,padding:'1px 7px',flexShrink:0 }}>{pTasks.length}</span>
+                    </div>
+                    {pillar.description && <div style={{ fontFamily:'var(--font-body)',fontSize:10.5,color:'var(--color-text-tertiary)',lineHeight:1.4,marginBottom:pMs.length?8:0 }}>{pillar.description}</div>}
+                    {pMs.length > 0 && (
+                      <div style={{ display:'flex',flexDirection:'column',gap:3 }}>
+                        {pMs.map(ms=>(
+                          <div key={ms.id} style={{ display:'flex',alignItems:'flex-start',gap:5 }}>
+                            <input type="checkbox" checked={ms.isComplete} onChange={()=>toggleMilestone(ms.id)} style={{ accentColor:'var(--color-gold)',width:10,height:10,flexShrink:0,marginTop:2,cursor:'pointer' }} />
+                            <span style={{ fontFamily:'var(--font-body)',fontSize:10,color:ms.isComplete?'var(--color-text-tertiary)':'var(--color-text-secondary)',textDecoration:ms.isComplete?'line-through':'none',lineHeight:1.35 }}>{ms.title}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {/* Tasks */}
+                  <div style={{ padding:'0 14px' }}>
+                    {pTasks.length === 0
+                      ? <div style={{ fontFamily:'var(--font-body)',fontSize:11.5,color:'var(--color-text-tertiary)',fontStyle:'italic',padding:'12px 0',textAlign:'center',opacity:.5 }}>No tasks yet</div>
+                      : pTasks.map(t=><TaskRow key={t.id} task={t} />)
+                    }
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
