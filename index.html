@@ -1483,6 +1483,8 @@ function PipelinePage() {
   const [addForm, setAddForm]             = React.useState({ company:'', contact:'', stage:'Intake', source:'Referral', assignee:'', value:'', priority:'', nextSteps:'Initial Outreach', description:'', nextActionDate:'', actionPlan:'', status:'Open', winPct:'', contactEmail:'', howToContact:'' });
   const [lostModal, setLostModal]               = React.useState(null);
   const [dismissedRenewals, setDismissedRenewals] = React.useState(new Set());
+  const [expandedStage, setExpandedStage]         = React.useState(null);
+  const [renewalLogModal, setRenewalLogModal]     = React.useState(null);
 
   const lostLeads = leads.filter(l => l.status === 'Lost' && !dismissedIds.has(l.id));
 
@@ -1574,8 +1576,11 @@ function PipelinePage() {
                   <span style={{ marginLeft:6,fontFamily:'var(--font-body)',fontSize:11,color: urgent ? '#c0392b' : 'var(--color-text-tertiary)' }}>({daysUntil}d)</span>
                 </p>
                 <div style={{ display:'flex',gap:6,flexShrink:0,alignItems:'center' }}>
+                  {lead.renewalStatus && (
+                    <span style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,letterSpacing:'0.06em',textTransform:'uppercase',padding:'3px 8px',borderRadius:20,background:lead.renewalStatus==='Renewed'?'rgba(39,174,96,0.12)':lead.renewalStatus==='Not Renewing'?'rgba(192,57,43,0.1)':'rgba(201,168,76,0.12)',color:lead.renewalStatus==='Renewed'?'#1a7a42':lead.renewalStatus==='Not Renewing'?'#c0392b':'var(--color-brown-deep)' }}>{lead.renewalStatus}</span>
+                  )}
                   <button onClick={()=>setProfileLead(lead)} style={{ fontFamily:'var(--font-body)',fontSize:11,fontWeight:400,color:'var(--color-text-secondary)',background:'var(--color-cream)',border:'1px solid var(--color-border)',borderRadius:3,padding:'4px 10px',cursor:'pointer' }}>View</button>
-                  <button onClick={()=>setEmailSlide({ lead, tpl: emailTemplates.Closed || emailTemplates.Intake })} style={{ fontFamily:'var(--font-body)',fontSize:11,fontWeight:500,color:'var(--color-brown-deep)',background:'rgba(201,168,76,0.15)',border:'1px solid rgba(201,168,76,0.3)',borderRadius:3,padding:'4px 10px',cursor:'pointer' }}>Begin Renewal</button>
+                  <button onClick={()=>setRenewalLogModal({ lead, selectedStatus: lead.renewalStatus||'' })} style={{ fontFamily:'var(--font-body)',fontSize:11,fontWeight:500,color:'var(--color-brown-deep)',background:'rgba(201,168,76,0.15)',border:'1px solid rgba(201,168,76,0.3)',borderRadius:3,padding:'4px 10px',cursor:'pointer' }}>Log Status</button>
                   <button onClick={()=>setDismissedRenewals(s=>new Set([...s,lead.id]))} title="Dismiss" style={{ background:'none',border:'none',cursor:'pointer',fontSize:16,color:'var(--color-text-tertiary)',padding:'2px 5px',lineHeight:1,display:'flex',alignItems:'center' }}>&#215;</button>
                 </div>
               </div>
@@ -1593,14 +1598,27 @@ function PipelinePage() {
                 <span style={{ fontFamily:'var(--font-body)',fontSize:11,fontWeight:500,color:'var(--color-text-tertiary)',background:'var(--color-cream-warm)',border:'1px solid var(--color-border)',borderRadius:20,padding:'1px 7px' }}>{byStage(stage).length}</span>
               </div>
               <div style={{ display:'flex',flexDirection:'column',gap:10 }}>
-                {byStage(stage).length === 0
-                  ? <div style={{ fontFamily:'var(--font-body)',fontSize:13,color:'var(--color-text-tertiary)',textAlign:'center',padding:'24px 0',opacity:.4 }}>—</div>
-                  : byStage(stage).map(lead => (
-                    <LeadCard key={lead.id} lead={lead}
-                      onOpenProfile={() => setProfileLead(lead)}
-                      onEmail={() => setEmailSlide({ lead, tpl: emailTemplates[stage] || emailTemplates.Intake })}
-                      onJourney={() => setJourneySlide(lead)} />
-                  ))}
+                {(() => {
+                  const sl = byStage(stage);
+                  if (sl.length === 0) return <div style={{ fontFamily:'var(--font-body)',fontSize:13,color:'var(--color-text-tertiary)',textAlign:'center',padding:'24px 0',opacity:.4 }}>—</div>;
+                  const visible = sl.slice(0, 3);
+                  const extra = sl.length - 3;
+                  return (
+                    <>
+                      {visible.map(lead => (
+                        <LeadCard key={lead.id} lead={lead}
+                          onOpenProfile={() => setProfileLead(lead)}
+                          onEmail={() => setEmailSlide({ lead, tpl: emailTemplates[stage] || emailTemplates.Intake })}
+                          onJourney={() => setJourneySlide(lead)} />
+                      ))}
+                      {extra > 0 && (
+                        <button onClick={() => setExpandedStage(stage)} style={{ fontFamily:'var(--font-body)',fontSize:12,fontWeight:500,color:'var(--color-brown-deep)',background:'rgba(201,168,76,0.07)',border:'1px dashed rgba(201,168,76,0.4)',borderRadius:4,padding:'8px 0',cursor:'pointer',width:'100%',textAlign:'center' }}>
+                          +{extra} more
+                        </button>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             </div>
           ))}
@@ -1813,6 +1831,67 @@ function PipelinePage() {
       )}
 
       {/* ── MARK LOST MODAL ── */}
+      {expandedStage && (
+        <div onClick={() => setExpandedStage(null)} style={{ position:'fixed',inset:0,zIndex:300,background:'rgba(44,24,16,0.4)',display:'flex',alignItems:'center',justifyContent:'center',padding:24 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background:'var(--color-cream)',borderRadius:6,width:'min(860px,95vw)',maxHeight:'85vh',overflow:'hidden',display:'flex',flexDirection:'column',boxShadow:'0 8px 40px rgba(0,0,0,0.2)' }}>
+            <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',padding:'18px 24px 14px',borderBottom:'1px solid var(--color-border)',flexShrink:0 }}>
+              <div style={{ display:'flex',alignItems:'center',gap:10 }}>
+                <span style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--color-text-secondary)' }}>{expandedStage}</span>
+                <span style={{ fontFamily:'var(--font-body)',fontSize:11,color:'var(--color-text-tertiary)',background:'var(--color-cream-warm)',border:'1px solid var(--color-border)',borderRadius:20,padding:'1px 7px' }}>{byStage(expandedStage).length}</span>
+              </div>
+              <button onClick={() => setExpandedStage(null)} style={{ background:'none',border:'none',cursor:'pointer',fontSize:20,color:'var(--color-text-tertiary)',lineHeight:1,padding:'2px 6px' }}>&#215;</button>
+            </div>
+            <div style={{ overflowY:'auto',padding:'18px 24px 24px' }}>
+              <div style={{ display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:12 }}>
+                {byStage(expandedStage).map(lead => (
+                  <LeadCard key={lead.id} lead={lead}
+                    onOpenProfile={() => { setProfileLead(lead); setExpandedStage(null); }}
+                    onEmail={() => { setEmailSlide({ lead, tpl: emailTemplates[expandedStage] || emailTemplates.Intake }); setExpandedStage(null); }}
+                    onJourney={() => { setJourneySlide(lead); setExpandedStage(null); }} />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {renewalLogModal && (
+        <div onClick={() => setRenewalLogModal(null)} style={{ position:'fixed',inset:0,zIndex:300,background:'rgba(44,24,16,0.4)',display:'flex',alignItems:'center',justifyContent:'center',padding:24 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background:'var(--color-cream)',borderRadius:6,width:'min(400px,95vw)',overflow:'hidden',boxShadow:'0 8px 40px rgba(0,0,0,0.2)' }}>
+            <div style={{ padding:'18px 22px 14px',borderBottom:'1px solid var(--color-border)',display:'flex',alignItems:'center',justifyContent:'space-between' }}>
+              <div>
+                <div style={{ fontFamily:'var(--font-display)',fontSize:16,fontWeight:300,color:'var(--color-text-primary)' }}>{renewalLogModal.lead.company}</div>
+                <div style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--color-gold)',marginTop:2 }}>Log Renewal Status</div>
+              </div>
+              <button onClick={() => setRenewalLogModal(null)} style={{ background:'none',border:'none',cursor:'pointer',fontSize:20,color:'var(--color-text-tertiary)',lineHeight:1,padding:'2px 6px' }}>&#215;</button>
+            </div>
+            <div style={{ padding:'18px 22px 22px' }}>
+              <div style={{ display:'flex',flexDirection:'column',gap:8,marginBottom:16 }}>
+                {['Renewed','In Progress','Scheduled Discussion','Not Renewing'].map(status => (
+                  <button key={status} onClick={() => setRenewalLogModal(m => ({...m, selectedStatus: status}))}
+                    style={{ fontFamily:'var(--font-body)',fontSize:13,fontWeight:400,textAlign:'left',padding:'10px 14px',border:'1px solid',borderColor:renewalLogModal.selectedStatus===status?'var(--color-gold)':'var(--color-border)',borderRadius:4,background:renewalLogModal.selectedStatus===status?'rgba(201,168,76,0.12)':'var(--color-white)',color:renewalLogModal.selectedStatus===status?'var(--color-brown-deep)':'var(--color-text-secondary)',cursor:'pointer' }}>
+                    {status}
+                  </button>
+                ))}
+              </div>
+              <button
+                disabled={!renewalLogModal.selectedStatus}
+                onClick={() => {
+                  const { lead, selectedStatus } = renewalLogModal;
+                  updateLead(lead.id, { renewalStatus: selectedStatus });
+                  if (selectedStatus === 'Renewed' || selectedStatus === 'Not Renewing') {
+                    setDismissedRenewals(s => new Set([...s, lead.id]));
+                  }
+                  setRenewalLogModal(null);
+                }}
+                style={{ fontFamily:'var(--font-body)',fontSize:12.5,fontWeight:600,padding:'10px 0',width:'100%',background:renewalLogModal.selectedStatus?'var(--color-brown-deep)':'var(--color-border)',color:renewalLogModal.selectedStatus?'var(--color-cream)':'var(--color-text-tertiary)',border:'none',borderRadius:4,cursor:renewalLogModal.selectedStatus?'pointer':'default' }}>
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {lostModal && (
         <div style={{ position:'fixed',inset:0,zIndex:300,display:'flex',alignItems:'center',justifyContent:'center' }}>
           <div onClick={()=>setLostModal(null)} style={{ position:'absolute',inset:0,background:'rgba(44,24,16,0.4)' }} />
