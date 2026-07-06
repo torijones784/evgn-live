@@ -175,26 +175,27 @@ const mondayBriefs = {
   },
 };
 
-const PIPELINE_STAFF   = ['Lindsay','Katie','Tori','Megan'];
-const PIPELINE_STAGES  = ['Intake','Discovery','Quote','Contract','Onboarding'];
-const NEXT_STEPS_OPTS  = ['Initial Outreach','Follow Up','Finalize Proposal','No Action'];
-const WIN_PCT_OPTS     = ['25%','50%','75%','100%'];
-const PRIORITY_OPTS    = ['High','Medium','Low'];
-const LEAD_STATUS_OPTS = ['Open','Not A Fit'];
-const LEAD_SOURCES     = ['Referral','Instagram','LinkedIn','Networking Event','Website','Cold Outreach','Entreprenista','Other'];
+const PIPELINE_STAFF    = ['Lindsay','Katie','Tori','Megan'];
+const PIPELINE_STAGES   = ['Qualified','Follow-up','Presentation','Contract Sent','Negotiation','Closed'];
+const NEXT_STEPS_OPTS   = ['Initial Outreach','Follow Up','Schedule Sales Call','Follow Up Sales Call','Finalize Proposal','Send Contract','Follow Up Closed Deal','No Action'];
+const WIN_PCT_OPTS      = ['25%','50%','75%','100%'];
+const PRIORITY_OPTS     = ['High','Medium','Low'];
+const LEAD_STATUS_OPTS  = ['Open','Won','Lost','Abandoned','Negotiation','Not A Fit'];
+const LEAD_SOURCES      = ['Referral','Entreprenista','Website','Google','Podcast','LinkedIn','Instagram','Networking Event','Cold Outreach','Other'];
+const LOSS_REASON_OPTS  = ['Competitor','Timing','Price','None'];
 
 const EMPTY_LEAD_FIELDS = { assignee:'', value:'', priority:'', nextSteps:'Initial Outreach', nextActionDate:'', actionPlan:'', description:'', winPct:'', closeDate:'', contractRenewalDate:'', lossReason:'', howToContact:'', contactEmail:'', followUpLabel:'' };
 
 const pipelineLeads = [
-  { id: 1, company: 'My Neighbors',  contact: 'Jess Harmon',    stage: 'Execution', status: 'Won',  source: 'Referral',        days: 12, ...EMPTY_LEAD_FIELDS, assignee:'Lindsay', priority:'High', winPct:'100%' },
-  { id: 2, company: 'George Rings',  contact: 'Claire Nguyen',  stage: 'Execution', status: 'Won',  source: 'LinkedIn',        days: 8,  ...EMPTY_LEAD_FIELDS, assignee:'Lindsay', priority:'High', winPct:'100%' },
-  { id: 3, company: 'Foxiecakes',    contact: 'Maya Ross',      stage: 'Execution', status: 'Won',  source: 'Instagram',       days: 3,  ...EMPTY_LEAD_FIELDS, assignee:'Lindsay', priority:'High', winPct:'100%' },
-  { id: 4, company: 'Bloom & Co',    contact: 'Rachel Kim',     stage: 'Discovery', status: 'Open', source: 'Networking Event',days: 2,  ...EMPTY_LEAD_FIELDS, assignee:'Katie',   nextSteps:'Follow Up', nextActionDate:'2026-05-20' },
-  { id: 5, company: 'The Salt House',contact: 'Priya Mehta',    stage: 'Quote',     status: 'Open', source: 'Referral',        days: 6,  ...EMPTY_LEAD_FIELDS, assignee:'Lindsay', nextSteps:'Finalize Proposal', priority:'High' },
-  { id: 6, company: 'Studio Vane',   contact: 'Lauren Ellis',   stage: 'Intake',    status: 'Open', source: 'Instagram',       days: 1,  ...EMPTY_LEAD_FIELDS, assignee:'Katie',   nextSteps:'Initial Outreach', nextActionDate:'2026-05-15' },
-  { id: 7, company: 'Maison Briar',  contact: 'Sofia Delaney',  stage: 'Contract',  status: 'Open', source: 'Cold Outreach',   days: 4,  ...EMPTY_LEAD_FIELDS, assignee:'Lindsay', nextSteps:'Finalize Proposal' },
-  { id: 8, company: 'Wren & Wild',   contact: 'Dana Cole',      stage: 'Lost',      status: 'Lost', source: 'Website',         days: 14, ...EMPTY_LEAD_FIELDS, followUpLabel:'Next quarter', lossReason:'Timing' },
-  { id: 9, company: 'Poppy Lane',    contact: 'Asha Thomas',    stage: 'Onboarding',status: 'Won',  source: 'Referral',        days: 2,  ...EMPTY_LEAD_FIELDS, assignee:'Lindsay', priority:'High', winPct:'100%' },
+  { id: 1, company: 'My Neighbors',  contact: 'Jess Harmon',   stage: 'Closed',        status: 'Won',  source: 'Referral',      days: 12, ...EMPTY_LEAD_FIELDS, assignee:'Lindsay', priority:'High', winPct:'100%' },
+  { id: 2, company: 'George Rings',  contact: 'Claire Nguyen', stage: 'Closed',        status: 'Won',  source: 'Referral',      days: 8,  ...EMPTY_LEAD_FIELDS, assignee:'Lindsay', priority:'High', winPct:'100%' },
+  { id: 3, company: 'Foxiecakes',    contact: 'Maya Ross',     stage: 'Closed',        status: 'Won',  source: 'Referral',      days: 3,  ...EMPTY_LEAD_FIELDS, assignee:'Lindsay', priority:'High', winPct:'100%' },
+  { id: 4, company: 'Bloom & Co',    contact: 'Rachel Kim',    stage: 'Qualified',     status: 'Open', source: 'Referral',      days: 2,  ...EMPTY_LEAD_FIELDS, assignee:'Katie',   nextSteps:'Follow Up',         nextActionDate:'2026-05-20' },
+  { id: 5, company: 'The Salt House',contact: 'Priya Mehta',   stage: 'Presentation',  status: 'Open', source: 'Referral',      days: 6,  ...EMPTY_LEAD_FIELDS, assignee:'Lindsay', nextSteps:'Finalize Proposal', priority:'High' },
+  { id: 6, company: 'Studio Vane',   contact: 'Lauren Ellis',  stage: 'Qualified',     status: 'Open', source: 'Entreprenista', days: 1,  ...EMPTY_LEAD_FIELDS, assignee:'Katie',   nextSteps:'Initial Outreach',  nextActionDate:'2026-05-15' },
+  { id: 7, company: 'Maison Briar',  contact: 'Sofia Delaney', stage: 'Contract Sent', status: 'Open', source: 'LinkedIn',      days: 4,  ...EMPTY_LEAD_FIELDS, assignee:'Lindsay', nextSteps:'Send Contract' },
+  { id: 8, company: 'Wren & Wild',   contact: 'Dana Cole',     stage: 'Lost',          status: 'Lost', source: 'Website',       days: 14, ...EMPTY_LEAD_FIELDS, followUpLabel:'Next quarter', lossReason:'Timing' },
+  { id: 9, company: 'Poppy Lane',    contact: 'Asha Thomas',   stage: 'Negotiation',   status: 'Open', source: 'Referral',      days: 2,  ...EMPTY_LEAD_FIELDS, assignee:'Lindsay', priority:'High', winPct:'75%' },
 ];
 
 const emailTemplates = {
@@ -1404,7 +1405,7 @@ function LeadProfilePanel({ lead, onClose, onUpdate, onMarkLost }) {
           {isLost && (
             <>
               {divider('Lost')}
-              <div style={{ marginBottom:14 }}>{sLabel('Loss Reason')}{textField('lossReason','Why did this lead not convert?')}</div>
+              <div style={{ marginBottom:14 }}>{sLabel('Loss Reason')}{dropField('lossReason', LOSS_REASON_OPTS, 'Loss Reason')}</div>
               <div style={{ marginBottom:14 }}>{sLabel('Follow-Up Window')}{textField('followUpLabel','e.g. Next quarter, After relaunch…')}</div>
             </>
           )}
@@ -1446,7 +1447,7 @@ function PipelinePage() {
 
   const lostLeads = leads.filter(l => l.status === 'Lost' && !dismissedIds.has(l.id));
   const byStage = s => leads.filter(l => l.stage === s && l.status !== 'Lost');
-  const stages = ['Intake','Discovery','Quote','Contract','Onboarding'];
+  const stages = PIPELINE_STAGES;
 
   function updateLead(id, updates) {
     setLeads(prev => prev.map(l => l.id === id ? {...l, ...updates} : l));
