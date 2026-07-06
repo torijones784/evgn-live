@@ -187,9 +187,9 @@ const LOSS_REASON_OPTS  = ['Competitor','Timing','Price','None'];
 const EMPTY_LEAD_FIELDS = { assignee:'', value:'', priority:'', nextSteps:'Initial Outreach', nextActionDate:'', actionPlan:'', description:'', winPct:'', closeDate:'', contractRenewalDate:'', lossReason:'', howToContact:'', contactEmail:'', followUpLabel:'' };
 
 const pipelineLeads = [
-  { id: 1, company: 'My Neighbors',  contact: 'Jess Harmon',   stage: 'Closed',        status: 'Won',  source: 'Referral',      days: 12, ...EMPTY_LEAD_FIELDS, assignee:'Lindsay', priority:'High', winPct:'100%' },
-  { id: 2, company: 'George Rings',  contact: 'Claire Nguyen', stage: 'Closed',        status: 'Won',  source: 'Referral',      days: 8,  ...EMPTY_LEAD_FIELDS, assignee:'Lindsay', priority:'High', winPct:'100%' },
-  { id: 3, company: 'Foxiecakes',    contact: 'Maya Ross',     stage: 'Closed',        status: 'Won',  source: 'Referral',      days: 3,  ...EMPTY_LEAD_FIELDS, assignee:'Lindsay', priority:'High', winPct:'100%' },
+  { id: 1, company: 'My Neighbors',  contact: 'Jess Harmon',   stage: 'Closed',        status: 'Won',  source: 'Referral',      days: 12, ...EMPTY_LEAD_FIELDS, assignee:'Lindsay', priority:'High', winPct:'100%', contractRenewalDate:'2026-09-01' },
+  { id: 2, company: 'George Rings',  contact: 'Claire Nguyen', stage: 'Closed',        status: 'Won',  source: 'Referral',      days: 8,  ...EMPTY_LEAD_FIELDS, assignee:'Lindsay', priority:'High', winPct:'100%', contractRenewalDate:'2026-08-15' },
+  { id: 3, company: 'Foxiecakes',    contact: 'Maya Ross',     stage: 'Closed',        status: 'Won',  source: 'Referral',      days: 3,  ...EMPTY_LEAD_FIELDS, assignee:'Lindsay', priority:'High', winPct:'100%', contractRenewalDate:'2026-09-20' },
   { id: 4, company: 'Bloom & Co',    contact: 'Rachel Kim',    stage: 'Qualified',     status: 'Open', source: 'Referral',      days: 2,  ...EMPTY_LEAD_FIELDS, assignee:'Katie',   nextSteps:'Follow Up',         nextActionDate:'2026-05-20' },
   { id: 5, company: 'The Salt House',contact: 'Priya Mehta',   stage: 'Presentation',  status: 'Open', source: 'Referral',      days: 6,  ...EMPTY_LEAD_FIELDS, assignee:'Lindsay', nextSteps:'Finalize Proposal', priority:'High' },
   { id: 6, company: 'Studio Vane',   contact: 'Lauren Ellis',  stage: 'Qualified',     status: 'Open', source: 'Entreprenista', days: 1,  ...EMPTY_LEAD_FIELDS, assignee:'Katie',   nextSteps:'Initial Outreach',  nextActionDate:'2026-05-15' },
@@ -1443,9 +1443,16 @@ function PipelinePage() {
   const [profileLead, setProfileLead]     = React.useState(null);
   const [dismissedIds, setDismissedIds]   = React.useState(new Set());
   const [addForm, setAddForm]             = React.useState({ company:'', contact:'', stage:'Intake', source:'Referral', assignee:'', value:'', priority:'', nextSteps:'Initial Outreach', description:'', nextActionDate:'', actionPlan:'', status:'Open', winPct:'', contactEmail:'', howToContact:'' });
-  const [lostModal, setLostModal]         = React.useState(null);
+  const [lostModal, setLostModal]               = React.useState(null);
+  const [dismissedRenewals, setDismissedRenewals] = React.useState(new Set());
 
   const lostLeads = leads.filter(l => l.status === 'Lost' && !dismissedIds.has(l.id));
+
+  const renewalLeads = leads.filter(l => {
+    if (!l.contractRenewalDate || dismissedRenewals.has(l.id)) return false;
+    const daysUntil = (new Date(l.contractRenewalDate) - new Date()) / 86400000;
+    return daysUntil >= 0 && daysUntil <= 90;
+  }).sort((a, b) => new Date(a.contractRenewalDate) - new Date(b.contractRenewalDate));
   const byStage = s => leads.filter(l => l.stage === s && l.status !== 'Lost');
   const stages = PIPELINE_STAGES;
 
@@ -1506,6 +1513,36 @@ function PipelinePage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {renewalLeads.length > 0 && (
+        <div style={{ margin:'16px 40px 0',background:'var(--color-white)',border:'1px solid rgba(201,168,76,0.35)',borderRadius:4,padding:'14px 20px',flexShrink:0 }}>
+          <div style={{ display:'flex',alignItems:'center',gap:8,marginBottom:10 }}>
+            <div style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--color-gold)' }}>Renewals Coming Up</div>
+            <div style={{ fontFamily:'var(--font-body)',fontSize:10,color:'var(--color-text-tertiary)' }}>— contracts renewing within 90 days</div>
+          </div>
+          {renewalLeads.map(lead => {
+            const renewal = new Date(lead.contractRenewalDate);
+            const daysUntil = Math.ceil((renewal - new Date()) / 86400000);
+            const dateStr = renewal.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+            const urgent = daysUntil <= 30;
+            return (
+              <div key={lead.id} style={{ display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,padding:'6px 0',borderBottom:'1px solid var(--color-border-subtle)' }}>
+                <p style={{ fontFamily:'var(--font-body)',fontSize:13,fontWeight:300,color:'var(--color-text-secondary)',lineHeight:1.5,margin:0 }}>
+                  <strong style={{ fontWeight:500,color:'var(--color-text-primary)' }}>{lead.company}</strong>
+                  {' — '}{lead.contact}.{' '}
+                  Contract renews <strong style={{ fontWeight:500,color: urgent ? '#c0392b' : 'var(--color-text-primary)' }}>{dateStr}</strong>
+                  <span style={{ marginLeft:6,fontFamily:'var(--font-body)',fontSize:11,color: urgent ? '#c0392b' : 'var(--color-text-tertiary)' }}>({daysUntil}d)</span>
+                </p>
+                <div style={{ display:'flex',gap:6,flexShrink:0,alignItems:'center' }}>
+                  <button onClick={()=>setProfileLead(lead)} style={{ fontFamily:'var(--font-body)',fontSize:11,fontWeight:400,color:'var(--color-text-secondary)',background:'var(--color-cream)',border:'1px solid var(--color-border)',borderRadius:3,padding:'4px 10px',cursor:'pointer' }}>View</button>
+                  <button onClick={()=>setEmailSlide({ lead, tpl: emailTemplates.Closed || emailTemplates.Intake })} style={{ fontFamily:'var(--font-body)',fontSize:11,fontWeight:500,color:'var(--color-brown-deep)',background:'rgba(201,168,76,0.15)',border:'1px solid rgba(201,168,76,0.3)',borderRadius:3,padding:'4px 10px',cursor:'pointer' }}>Begin Renewal</button>
+                  <button onClick={()=>setDismissedRenewals(s=>new Set([...s,lead.id]))} title="Dismiss" style={{ background:'none',border:'none',cursor:'pointer',fontSize:16,color:'var(--color-text-tertiary)',padding:'2px 5px',lineHeight:1,display:'flex',alignItems:'center' }}>&#215;</button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
