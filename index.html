@@ -1849,6 +1849,119 @@ function MktClientPage({ activeClient, perfData = mktPerformance }) {
 }
 
 
+/* ── FINANCE ─────────────────────────────────────────────── */
+
+function FinanceAllPage({ perfData = mktPerformance }) {
+  const client = 'EVGN Test';
+  const perf = perfData[client];
+
+  function fmtRev(v) { return v >= 1000 ? `$${(v/1000).toFixed(0)}k` : `$${v}`; }
+  function fmtRevFull(v) { return '$' + v.toLocaleString(); }
+  function chgBadge(chg, invertGood) {
+    if (chg == null) return null;
+    const isGood = invertGood ? chg < 0 : chg > 0;
+    const color = isGood ? '#5a7a58' : '#8a4030';
+    const bg = isGood ? 'rgba(139,158,137,0.12)' : 'rgba(180,100,80,0.1)';
+    const arrow = chg > 0 ? '▲' : '▼';
+    return <span style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,color,background:bg,borderRadius:20,padding:'2px 7px',marginLeft:6 }}>{arrow}{Math.abs(chg)}%</span>;
+  }
+
+  if (!perf) return <div style={{ padding:40,fontFamily:'var(--font-body)',color:'var(--color-text-tertiary)' }}>Loading…</div>;
+
+  const d = perf.monthly;
+  const orders = (d.aov && d.aov.v) ? Math.round(d.revenue.v / d.aov.v) : 0;
+  const prevOrders = (d.aov && d.aov.p && d.revenue.p) ? Math.round(d.revenue.p / d.aov.p) : 0;
+  const ordChg = prevOrders ? Math.round((orders - prevOrders) / prevOrders * 100) : 0;
+  const totalSpend = (perf.channels || []).reduce((a, c) => a + (c.spend || 0), 0);
+  const paidRev = (perf.channels || []).filter(c => c.spend > 0).reduce((a, c) => a + (c.revenue || 0), 0);
+  const maxTrend = Math.max(...(perf.revTrend || [1]));
+
+  return (
+    <div className="page-enter" style={{ flex:1,overflowY:'auto',background:'var(--color-cream)',minHeight:'100vh' }}>
+      <PageHeader section="Finance" title="EVGN Test" />
+      <div style={{ padding:'24px 40px 60px' }}>
+
+        {/* Revenue Summary */}
+        <div style={{ background:'var(--color-white)',border:'1px solid var(--color-border)',borderRadius:4,padding:'20px 24px',marginBottom:20 }}>
+          <div style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--color-text-tertiary)',marginBottom:16 }}>Revenue Summary · Last 30 Days</div>
+          <div style={{ display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:14 }}>
+            {[
+              { label:'Revenue',         val:fmtRev(d.revenue.v), chg:d.revenue.chg, prev:'prev: ' + fmtRev(d.revenue.p) },
+              { label:'Orders',          val:String(orders),      chg:ordChg,        prev:'prev: ' + prevOrders },
+              { label:'Avg Order Value', val:'$' + d.aov.v,       chg:d.aov.chg,     prev:'prev: $' + d.aov.p },
+            ].map((m, i) => (
+              <div key={i} style={{ padding:'14px 16px',background:'var(--color-cream)',border:'1px solid var(--color-border-subtle)',borderRadius:3 }}>
+                <div style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,letterSpacing:'0.07em',textTransform:'uppercase',color:'var(--color-text-tertiary)',marginBottom:8 }}>{m.label}</div>
+                <div style={{ fontFamily:'var(--font-display)',fontSize:28,fontWeight:400,color:'var(--color-text-primary)',display:'flex',alignItems:'center' }}>
+                  {m.val}{chgBadge(m.chg, false)}
+                </div>
+                <div style={{ fontFamily:'var(--font-body)',fontSize:10.5,fontWeight:300,color:'var(--color-text-tertiary)',marginTop:4 }}>{m.prev}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Channel Breakdown */}
+        <div style={{ background:'var(--color-white)',border:'1px solid var(--color-border)',borderRadius:4,padding:'20px 24px',marginBottom:20 }}>
+          <div style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--color-text-tertiary)',marginBottom:16 }}>Channel Breakdown</div>
+          <table style={{ width:'100%',borderCollapse:'collapse' }}>
+            <thead>
+              <tr style={{ background:'var(--color-cream)' }}>
+                {['Channel','Ad Spend','Revenue','ROAS'].map((h, i) => (
+                  <th key={i} style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--color-text-tertiary)',padding:'8px 12px',textAlign:i===0?'left':'right',borderBottom:'1px solid var(--color-border)' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {(perf.channels || []).map((ch, i) => (
+                <tr key={i} style={{ borderBottom:'1px solid var(--color-border-subtle)' }}>
+                  <td style={{ fontFamily:'var(--font-body)',fontSize:13,fontWeight:500,color:'var(--color-text-primary)',padding:'12px 12px' }}>{ch.name}</td>
+                  <td style={{ fontFamily:'var(--font-body)',fontSize:13,fontWeight:400,color:ch.spend>0?'var(--color-text-primary)':'var(--color-text-tertiary)',padding:'12px 12px',textAlign:'right' }}>{ch.spend > 0 ? fmtRevFull(ch.spend) : '—'}</td>
+                  <td style={{ fontFamily:'var(--font-body)',fontSize:13,fontWeight:500,color:'var(--color-text-primary)',padding:'12px 12px',textAlign:'right' }}>{fmtRevFull(ch.revenue)}</td>
+                  <td style={{ fontFamily:'var(--font-body)',fontSize:13,fontWeight:400,color:'var(--color-text-primary)',padding:'12px 12px',textAlign:'right' }}>{ch.roas != null ? ch.roas + '×' : '—'}</td>
+                </tr>
+              ))}
+              <tr style={{ background:'var(--color-cream)' }}>
+                <td style={{ fontFamily:'var(--font-body)',fontSize:11,fontWeight:600,letterSpacing:'0.05em',textTransform:'uppercase',color:'var(--color-text-tertiary)',padding:'10px 12px' }}>Total</td>
+                <td style={{ fontFamily:'var(--font-body)',fontSize:13,fontWeight:600,color:'var(--color-text-primary)',padding:'10px 12px',textAlign:'right' }}>{fmtRevFull(totalSpend)}</td>
+                <td style={{ fontFamily:'var(--font-body)',fontSize:13,fontWeight:600,color:'var(--color-text-primary)',padding:'10px 12px',textAlign:'right' }}>{fmtRevFull(d.revenue.v)}</td>
+                <td style={{ fontFamily:'var(--font-body)',fontSize:13,fontWeight:600,color:'var(--color-text-primary)',padding:'10px 12px',textAlign:'right' }}>{totalSpend > 0 ? (d.revenue.v / totalSpend).toFixed(1) + '×' : '—'}</td>
+              </tr>
+            </tbody>
+          </table>
+          <div style={{ display:'flex',gap:32,marginTop:16,paddingTop:14,borderTop:'1px solid var(--color-border-subtle)',flexWrap:'wrap' }}>
+            {[
+              { label:'Total Ad Spend', val:fmtRevFull(totalSpend) },
+              { label:'Paid Revenue',   val:fmtRevFull(paidRev) },
+              { label:'Blended ROAS',   val:totalSpend > 0 ? (d.revenue.v / totalSpend).toFixed(1) + '×' : '—' },
+            ].map((s, i) => (
+              <div key={i}>
+                <div style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,letterSpacing:'0.07em',textTransform:'uppercase',color:'var(--color-text-tertiary)',marginBottom:4 }}>{s.label}</div>
+                <div style={{ fontFamily:'var(--font-display)',fontSize:20,fontWeight:400,color:'var(--color-text-primary)' }}>{s.val}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Revenue Trend */}
+        <div style={{ background:'var(--color-white)',border:'1px solid var(--color-border)',borderRadius:4,padding:'20px 24px' }}>
+          <div style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:600,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--color-text-tertiary)',marginBottom:20 }}>Monthly Revenue Trend</div>
+          <div style={{ display:'flex',alignItems:'flex-end',gap:16,height:120 }}>
+            {(perf.revTrend || []).map((v, i) => (
+              <div key={i} style={{ flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:6,justifyContent:'flex-end' }}>
+                <div style={{ fontFamily:'var(--font-body)',fontSize:10.5,fontWeight:400,color:'var(--color-text-tertiary)' }}>{fmtRev(v)}</div>
+                <div style={{ width:'100%',background:'var(--color-gold)',opacity:0.6 + 0.4 * (i / ((perf.revTrend.length - 1) || 1)),borderRadius:'2px 2px 0 0',height:`${Math.max(8, Math.round((v / maxTrend) * 80))}px` }} />
+                <div style={{ fontFamily:'var(--font-body)',fontSize:10,fontWeight:400,color:'var(--color-text-tertiary)' }}>{(perf.revLabels || [])[i]}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
 /* ── LOGIN ───────────────────────────────────────────────── */
 
 function LoginPage({ onLogin }) {
@@ -1955,7 +2068,7 @@ const NAV = [
     { key:'mkt-client', label:'Client View',  path:'/marketing/client', phase:1 },
   ]},
   { key:'finance', label:'Finance', children:[
-    { key:'fin-all', label:'All Clients', path:'/finance', phase:2 },
+    { key:'fin-all', label:'All Clients', path:'/finance', phase:1 },
   ]},
   { key:'coo', label:'COO Suite', children:[
     { key:'coo-scale', label:'Scaling Infrastructure', path:'/coo', phase:2 },
@@ -2113,6 +2226,7 @@ function App() {
       case '/operations/client':   return <OpsClientPage activeClient={activeClient} />;
       case '/marketing/all':       return <MktAllPage perfData={livePerf} />;
       case '/marketing/client':    return <MktClientPage activeClient={activeClient} perfData={livePerf} />;
+      case '/finance':             return <FinanceAllPage perfData={livePerf} />;
       default:                     return <HomePage activeClient={activeClient} />;
     }
   }
