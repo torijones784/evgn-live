@@ -10,6 +10,7 @@
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.js"></script>
   <style>
     :root {
       --color-brown-deep: #2c1810;
@@ -80,7 +81,7 @@
 
 /* ── DATA ────────────────────────────────────────────────── */
 
-const CLIENTS = ['My Neighbors', 'George Rings', 'Foxiecakes'];
+const CLIENTS = ['My Neighbors', 'George Rings', 'Foxiecakes', 'EVGN Test'];
 
 const USERS = [
   { email:'jonestori784@gmail.com',          password:'Tq7#Mv2k', name:'Tori' },
@@ -166,6 +167,29 @@ const mondayBriefs = {
       { item: 'Meta ad performance optimization', owner: 'Bryenn', dept: 'Marketing', status: 'In review' },
       { item: 'Pop-up strategy test (wheel vs. standard)', owner: 'Carly', dept: 'Marketing', status: 'In review' },
       { item: 'Wholesale strategy follow-up call timing', owner: 'Lindsay', dept: 'Operations', status: 'Awaiting your input' },
+    ],
+  },
+  'EVGN Test': {
+    weekOf: 'Week of Nov 3, 2026',
+    greeting: "Test store is live and synced to Supabase. Real order data is flowing.",
+    priority: {
+      headline: 'Confirm Supabase sync is capturing all order events correctly.',
+      body: "The data pipeline from Shopify to Supabase is active. Verify that daily_summaries are updating and revenue figures match the Shopify admin dashboard.",
+      owner: 'EVGN Team',
+      subtasks: [
+        'Compare Supabase daily_summaries revenue totals against Shopify admin',
+        'Confirm new_customers count is populating correctly',
+        'Review order_count for the past 7 days',
+      ],
+    },
+    done: [
+      'Supabase project connected and schema deployed',
+      'Test products and orders seeded',
+      'daily_summaries syncing for 60 days of data',
+    ],
+    inMotion: [
+      { item: 'Shopify → Supabase live sync pipeline', owner: 'Dev', dept: 'Operations', status: 'In review' },
+      { item: 'OS dashboard Supabase integration', owner: 'Dev', dept: 'Marketing', status: 'Active' },
     ],
   },
 };
@@ -314,6 +338,15 @@ const clientAgendas = {
       { title:'Next Steps + Setup for Next Session', owner:'Lindsay', duration:'5 min', items:['Align on wholesale strategy working session inputs','Confirm COGS spreadsheet timing','Identify key tests and priorities for upcoming week','Outline focus areas for next check-in'] },
     ],
   },
+  'EVGN Test': {
+    meetingType: 'Sync',
+    nextDate: 'Nov 10, 2026',
+    attendees: 'EVGN Team',
+    sections: [
+      { title:'Data Sync Review', owner:'Dev', duration:'10 min', items:['Confirm Supabase pipeline is active','Review daily_summaries row counts','Verify revenue totals match Shopify admin'] },
+      { title:'Next Steps', owner:'EVGN Team', duration:'5 min', items:['Identify any missing data fields','Plan live Shopify webhook integration'] },
+    ],
+  },
 };
 
 function getCheckedItems(lead) {
@@ -357,12 +390,14 @@ const opsAll = [
   { id:4, client:'George Rings', workstream:'Brand Positioning Refresh',         owner:'Megan', status:'On Track',       due:'Jun 20' },
   { id:5, client:'Foxiecakes',   workstream:'Instagram Content Calendar Q3',     owner:'Megan', status:'On Track',       due:'Jun 3'  },
   { id:6, client:'Foxiecakes',   workstream:'Wholesale Outreach Tracker',        owner:'Alex',  status:'Blocked',        due:'May 28' },
+  { id:7, client:'EVGN Test',   workstream:'Supabase Data Pipeline Validation',  owner:'Dev',   status:'On Track',        due:'Nov 10' },
 ];
 
 const meetingCadence = [
   { client:'My Neighbors', type:'Monthly Strategy Call', date:'Jun 3, 2026'  },
   { client:'George Rings', type:'Bi-weekly Check-in',    date:'May 29, 2026' },
   { client:'Foxiecakes',   type:'Weekly Sprint',         date:'May 28, 2026' },
+  { client:'EVGN Test',   type:'Sync',                  date:'Nov 10, 2026' },
 ];
 
 const opsClient = {
@@ -399,6 +434,16 @@ const opsClient = {
       'Confirm photography direction: seasonal or core product focus for Q3',
     ],
   },
+  'EVGN Test': {
+    sprint: 'Sprint 1 — Nov 2026',
+    workstreams: [
+      { name:'Supabase Data Pipeline Validation', owner:'Dev', status:'On Track', due:'Nov 10', update:'Supabase is connected and daily_summaries are populating. Reviewing data accuracy against Shopify admin.', progress:0.6 },
+    ],
+    actions: [
+      'Compare daily_summaries revenue totals against Shopify admin export',
+      'Confirm webhook setup for real-time order sync',
+    ],
+  },
 };
 
 const mktAlerts = [
@@ -425,6 +470,12 @@ const mktMetrics = {
     { label:'New Leads (MTD)',  value:'37',   prev:'29',   dir:'up',      flag:false },
     { label:'CAC',              value:'$91',  prev:'$108', dir:'down-good',flag:false },
   ]},
+  'EVGN Test': { period:'Nov 2026', metrics:[
+    { label:'Paid Social ROAS', value:'2.2x', prev:'—',   dir:'flat',    flag:false },
+    { label:'Email Open Rate',  value:'—',    prev:'—',   dir:'flat',    flag:false },
+    { label:'New Leads (MTD)',  value:'90',   prev:'—',   dir:'flat',    flag:false },
+    { label:'CAC',              value:'$90',  prev:'—',   dir:'flat',    flag:false },
+  ]},
 };
 
 const mktClientView = {
@@ -442,6 +493,11 @@ const mktClientView = {
     lede:"Email and organic are performing well — paid social is the focus area for June. Here's your full picture.",
     campaign:{ name:'Q3 Content Push — "Baked with Love"', objective:'Grow organic reach and wholesale brand awareness', timeline:'Jul 1 – Sep 30, 2026', status:'Pre-production — Content calendar in review', channels:['Instagram Organic (12 posts)','Email (2-part sequence)','Paid Social'] },
     channels:[{ name:'Organic',alloc:40,perf:72 },{ name:'Email',alloc:25,perf:65 },{ name:'Paid Social',alloc:25,perf:38 },{ name:'Partnerships',alloc:10,perf:58 }],
+  },
+  'EVGN Test': {
+    lede:'Live test store connected to Supabase. Revenue data refreshes from real order activity.',
+    campaign:{ name:'Data Pipeline Test Campaign', objective:'Validate Shopify → Supabase sync and confirm revenue reporting accuracy', timeline:'Nov 2026', status:'Active — Supabase integration live', channels:['Supabase','Shopify Admin API','Organic'] },
+    channels:[{ name:'Organic',alloc:100,perf:70 }],
   },
 };
 
@@ -500,7 +556,30 @@ const mktPerformance = {
     email: { popup:{on:true,rate:2.1}, welcome:true, cart:true, postPurchase:false, cadence:'3× / week' },
     revTrend: [15200,16800,17400,19200], revLabels:['Feb','Mar','Apr','May'],
   },
+  'EVGN Test': {
+    period: { week: 'Nov 3–9', month: 'Nov 2026' },
+    weekly:  { revenue:{v:1500,p:1200,chg:25}, newRev:{v:600,p:480,chg:25}, retRate:{v:40,p:38,chg:5}, aov:{v:75,p:72,chg:4}, conv:{v:2.0,p:1.8,chg:11}, mer:{v:2.2,p:2.0,chg:10}, roas:{v:2.2,p:2.0,chg:10}, cac:{v:90,p:98,chg:-8}, sessions:{v:2200,p:2000,chg:10}, mobile:65 },
+    monthly: { revenue:{v:21000,p:18000,chg:17}, newRev:{v:8400,p:7200,chg:17}, retRate:{v:40,p:38,chg:5}, aov:{v:75,p:72,chg:4}, conv:{v:2.0,p:1.8,chg:11}, mer:{v:2.2,p:2.0,chg:10}, roas:{v:2.2,p:2.0,chg:10}, cac:{v:90,p:98,chg:-8}, sessions:{v:9500,p:8600,chg:10}, mobile:65 },
+    channels: [
+      { name:'Meta',    spend:2800, roas:2.2, revenue:6160 },
+      { name:'Google',  spend:1400, roas:1.9, revenue:2660 },
+      { name:'Email',   spend:400,  roas:9.0, revenue:3600 },
+      { name:'Organic', spend:0,    roas:null,revenue:8580 },
+    ],
+    topPages: [
+      { page:'/products/vitamin-c-serum', revenue:6300, sessions:1800 },
+      { page:'/products/retinol-serum',   revenue:4800, sessions:1200 },
+      { page:'/products/face-oil',        revenue:3600, sessions:900  },
+    ],
+    email: { popup:{on:false,rate:null}, welcome:false, cart:false, postPurchase:false, cadence:'—' },
+    revTrend: [15000,17000,19000,21000], revLabels:['Aug','Sep','Oct','Nov'],
+  },
 };
+
+const _sb = supabase.createClient(
+  'https://qrapkrmtzkkrxpavxodk.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyYXBrcm10emtrcnhwYXZ4b2RrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0NzEwODEsImV4cCI6MjEwMTA0NzA4MX0.KxodwsX6mjpufDpcQ__8Xvuy2JdX8Yge7B0QakNgTqc'
+);
 
 
 /* ── SHARED COMPONENTS ───────────────────────────────────── */
@@ -1301,7 +1380,7 @@ function OpsClientPage({ activeClient }) {
 
 /* ── PAGE: MARKETING ALL ─────────────────────────────────── */
 
-function MktAllPage() {
+function MktAllPage({ perfData = mktPerformance }) {
   const [period, setPeriod] = React.useState('monthly');
 
   function fmtRev(v) { return v >= 1000 ? `$${(v/1000).toFixed(0)}k` : `$${v}`; }
@@ -1326,7 +1405,7 @@ function MktAllPage() {
   // Collect attention items: |chg| >= 15
   const attentionItems = [];
   CLIENTS.forEach(client => {
-    const d = mktPerformance[client];
+    const d = perfData[client];
     if (!d) return;
     const data = period === 'weekly' ? d.weekly : d.monthly;
     metricDefs.forEach(md => {
@@ -1390,7 +1469,7 @@ function MktAllPage() {
               </thead>
               <tbody>
                 {CLIENTS.map((client, ri) => {
-                  const d = mktPerformance[client];
+                  const d = perfData[client];
                   if (!d) return null;
                   const data = period === 'weekly' ? d.weekly : d.monthly;
                   let flagCount = 0;
@@ -1561,10 +1640,10 @@ function WeeklyReportPanel({ perf, activeClient, onClose }) {
   );
 }
 
-function MktClientPage({ activeClient }) {
+function MktClientPage({ activeClient, perfData = mktPerformance }) {
   const [period, setPeriod] = React.useState('monthly');
   const [showReport, setShowReport] = React.useState(false);
-  const perf = mktPerformance[activeClient] || mktPerformance['My Neighbors'];
+  const perf = perfData[activeClient] || perfData['My Neighbors'];
   const data = period === 'weekly' ? perf.weekly : perf.monthly;
   const periodLabel = period === 'weekly' ? perf.period.week : perf.period.month;
 
@@ -1937,11 +2016,75 @@ function NavItem({ label, active, onClick, indent, phase }) {
 function App() {
   const [path, setPath] = React.useState('/');
   const [activeClient, setActiveClient] = React.useState('My Neighbors');
+  const [livePerf, setLivePerf] = React.useState(mktPerformance);
 
   // Auth — check localStorage for existing session
   const [user, setUser] = React.useState(() => {
     try { return JSON.parse(localStorage.getItem('evgn_session')); } catch { return null; }
   });
+
+  React.useEffect(() => {
+    (async () => {
+      try {
+        const { data: stores } = await _sb.from('stores').select('id, client_name');
+        const since = new Date(); since.setDate(since.getDate() - 120);
+        const sinceStr = since.toISOString().split('T')[0];
+        const { data: rows } = await _sb.from('daily_summaries')
+          .select('store_id, date, total_revenue, order_count, average_order')
+          .gte('date', sinceStr).order('date');
+        if (!stores || !rows) return;
+        const idToName = {};
+        stores.forEach(s => { if (s.client_name) idToName[s.id] = s.client_name; });
+        const sbToCdn = { 'EVGN Test':'EVGN Test', 'My Neighbors':'My Neighbors', 'George Rings':'George Rings', 'Foxy Cakes':'Foxiecakes' };
+        const byClient = {};
+        rows.forEach(r => {
+          const n = sbToCdn[idToName[r.store_id]];
+          if (!n) return;
+          if (!byClient[n]) byClient[n] = [];
+          byClient[n].push(r);
+        });
+        const now = new Date();
+        const updated = { ...mktPerformance };
+        Object.entries(byClient).forEach(([n, clientRows]) => {
+          const monthAgo = new Date(now); monthAgo.setDate(now.getDate() - 30);
+          const prevAgo = new Date(monthAgo); prevAgo.setDate(monthAgo.getDate() - 30);
+          const ms = monthAgo.toISOString().split('T')[0];
+          const ps = prevAgo.toISOString().split('T')[0];
+          const cur = clientRows.filter(r => r.date >= ms);
+          const prv = clientRows.filter(r => r.date >= ps && r.date < ms);
+          const sum = (arr, k) => arr.reduce((a, r) => a + (Number(r[k]) || 0), 0);
+          const curRev = sum(cur, 'total_revenue');
+          const prvRev = sum(prv, 'total_revenue');
+          const curOrds = sum(cur, 'order_count');
+          const prvOrds = sum(prv, 'order_count');
+          const curAOV = curOrds ? Math.round(curRev / curOrds) : 0;
+          const prvAOV = prvOrds ? Math.round(prvRev / prvOrds) : 0;
+          const chg = (a, b) => b ? Math.round((a - b) / b * 100) : 0;
+          const labels = [], trend = [];
+          for (let i = 3; i >= 0; i--) {
+            const d = new Date(now); d.setMonth(d.getMonth() - i);
+            labels.push(d.toLocaleString('en-US', { month: 'short' }));
+            trend.push(Math.round(clientRows.filter(r => {
+              const rd = new Date(r.date);
+              return rd.getMonth() === d.getMonth() && rd.getFullYear() === d.getFullYear();
+            }).reduce((a, r) => a + (Number(r.total_revenue) || 0), 0)));
+          }
+          const base = updated[n] || {};
+          updated[n] = {
+            ...base,
+            monthly: {
+              ...(base.monthly || {}),
+              revenue: { v: Math.round(curRev), p: Math.round(prvRev), chg: chg(curRev, prvRev) },
+              aov:     { v: curAOV, p: prvAOV, chg: chg(curAOV, prvAOV) },
+            },
+            revTrend: trend,
+            revLabels: labels,
+          };
+        });
+        setLivePerf(updated);
+      } catch(e) { /* keep static data on error */ }
+    })();
+  }, []);
 
   function handleLogin(u) { setUser(u); }
   function handleLogout() {
@@ -1958,8 +2101,8 @@ function App() {
       case '/intake/knowledge-base': return <KnowledgeBasePage />;
       case '/operations/all':      return <OpsAllPage />;
       case '/operations/client':   return <OpsClientPage activeClient={activeClient} />;
-      case '/marketing/all':       return <MktAllPage />;
-      case '/marketing/client':    return <MktClientPage activeClient={activeClient} />;
+      case '/marketing/all':       return <MktAllPage perfData={livePerf} />;
+      case '/marketing/client':    return <MktClientPage activeClient={activeClient} perfData={livePerf} />;
       default:                     return <HomePage activeClient={activeClient} />;
     }
   }
