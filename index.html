@@ -10,7 +10,6 @@
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.js"></script>
   <style>
     :root {
       --color-brown-deep: #2c1810;
@@ -576,10 +575,14 @@ const mktPerformance = {
   },
 };
 
-const _sb = supabase.createClient(
-  'https://qrapkrmtzkkrxpavxodk.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyYXBrcm10emtrcnhwYXZ4b2RrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0NzEwODEsImV4cCI6MjEwMTA0NzA4MX0.KxodwsX6mjpufDpcQ__8Xvuy2JdX8Yge7B0QakNgTqc'
-);
+const _sbUrl = 'https://qrapkrmtzkkrxpavxodk.supabase.co';
+const _sbKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyYXBrcm10emtrcnhwYXZ4b2RrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0NzEwODEsImV4cCI6MjEwMTA0NzA4MX0.KxodwsX6mjpufDpcQ__8Xvuy2JdX8Yge7B0QakNgTqc';
+function sbFetch(table, params) {
+  const qs = Object.entries(params || {}).map(([k,v]) => `${k}=${encodeURIComponent(v)}`).join('&');
+  return fetch(`${_sbUrl}/rest/v1/${table}${qs ? '?' + qs : ''}`, {
+    headers: { apikey: _sbKey, Authorization: 'Bearer ' + _sbKey, 'Content-Type': 'application/json' }
+  }).then(r => r.json());
+}
 
 
 /* ── SHARED COMPONENTS ───────────────────────────────────── */
@@ -2026,12 +2029,14 @@ function App() {
   React.useEffect(() => {
     (async () => {
       try {
-        const { data: stores } = await _sb.from('stores').select('id, client_name');
+        const stores = await sbFetch('stores', { select: 'id,client_name' });
         const since = new Date(); since.setDate(since.getDate() - 120);
         const sinceStr = since.toISOString().split('T')[0];
-        const { data: rows } = await _sb.from('daily_summaries')
-          .select('store_id, date, total_revenue, order_count, average_order')
-          .gte('date', sinceStr).order('date');
+        const rows = await sbFetch('daily_summaries', {
+          select: 'store_id,date,total_revenue,order_count,average_order',
+          'date': 'gte.' + sinceStr,
+          order: 'date.asc',
+        });
         if (!stores || !rows) return;
         const idToName = {};
         stores.forEach(s => { if (s.client_name) idToName[s.id] = s.client_name; });
